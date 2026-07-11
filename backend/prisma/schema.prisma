@@ -1,0 +1,198 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model Card {
+  id               String   @id @default(cuid())
+
+  // External IDs
+  apiId            String   @unique
+  riftboundId      String   @unique
+  tcgplayerId      String?
+
+  // Basic
+  name             String
+  cleanName        String
+  collectorNumber  Int
+
+  // Stats
+  energy           Int?
+  might            Int?
+  power            Int?
+
+  // Classification
+  type             CardType
+  supertype        String?
+  rarity           Rarity
+
+  // Text
+  richText         String   @db.Text
+  plainText        String   @db.Text
+  flavorText       String?  @db.Text
+
+  // Media
+  imageUrl         String
+  artist           String
+  accessibility    String
+
+  // Metadata
+  orientation      Orientation
+
+  alternateArt     Boolean
+  overnumbered     Boolean
+  signature        Boolean
+
+  updatedOn        DateTime
+
+  // Relationships
+  setId            String
+  set              Set @relation(fields: [setId], references: [id])
+
+  domains          CardDomain[]
+  tags             CardTag[]
+  deckCards        DeckCard[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([name])
+  @@index([cleanName])
+  @@index([collectorNumber])
+}
+
+model Set {
+
+  id          String @id
+
+  label       String
+
+  cards       Card[]
+}
+
+model Domain {
+
+  id      String @id @default(cuid())
+
+  name    String @unique
+
+  cards   CardDomain[]
+}
+
+model CardDomain {
+
+  cardId      String
+
+  domainId    String
+
+  card         Card @relation(fields: [cardId], references: [id])
+
+  domain       Domain @relation(fields: [domainId], references: [id])
+
+  @@id([cardId, domainId])
+}
+
+model Tag {
+
+  id      String @id @default(cuid())
+
+  name    String @unique
+
+  official Boolean @default(false)
+
+  cards   CardTag[]
+}
+
+model CardTag {
+
+  cardId      String
+
+  tagId       String
+
+  card         Card @relation(fields: [cardId], references: [id])
+
+  tag          Tag @relation(fields: [tagId], references: [id])
+
+  @@id([cardId, tagId])
+}
+
+model User {
+
+  id           String @id @default(cuid())
+
+  username     String @unique
+
+  email        String @unique
+
+  passwordHash String
+
+  decks        Deck[]
+
+  createdAt    DateTime @default(now())
+}
+
+model Deck {
+
+  id          String @id @default(cuid())
+
+  name        String
+
+  description String?
+
+  ownerId     String
+
+  owner        User @relation(fields: [ownerId], references: [id])
+
+  cards        DeckCard[]
+
+  createdAt   DateTime @default(now())
+
+  updatedAt   DateTime @updatedAt
+}
+
+model DeckCard {
+
+  deckId      String
+
+  cardId      String
+
+  quantity    Int
+
+  deck         Deck @relation(fields: [deckId], references: [id])
+
+  card         Card @relation(fields: [cardId], references: [id])
+
+  @@id([deckId, cardId])
+}
+
+enum CardType {
+  UNIT
+  SPELL
+  LEGEND
+  GEAR
+  BATTLEFIELD
+  RUNE
+}
+
+enum Rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  PROMO
+}
+
+enum Orientation {
+  PORTRAIT
+  LANDSCAPE
+}
