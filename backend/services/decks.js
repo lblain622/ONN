@@ -1,4 +1,4 @@
-import prisma from "../prisma.js";
+import { prisma } from '../config/prisma.js';
 
 export async function createDeck(userId, name, description) {
     const newDeck = await prisma.deck.create({
@@ -56,7 +56,6 @@ export async function getDecksByUserId(userId) {
         where: { ownerId: userId },
     });
 }
-
 
 export async function updateDeck(deckId, name, description) {
     return prisma.deck.update({

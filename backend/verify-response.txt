@@ -1,0 +1,2 @@
+status=500
+{"success":false,"message":"\nInvalid `prisma.user.findUnique()` invocation:\n\n\nThe column `User.googleId` does not exist in the current database."}
