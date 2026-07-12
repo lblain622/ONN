@@ -17,12 +17,12 @@ model Card {
 
   // External IDs
   apiId            String   @unique
-  riftboundId      String   @unique
+  riftboundId      String   
   tcgplayerId      String?
 
   // Basic
   name             String
-  cleanName        String
+  cleanName        String?
   collectorNumber  Int
 
   // Stats
@@ -127,36 +127,47 @@ model CardTag {
 
 model User {
 
-  id           String @id @default(cuid())
+  id            String   @id @default(cuid())
 
-  username     String @unique
+  username      String   @unique
+  email         String   @unique
 
-  email        String @unique
+  passwordHash  String?
 
-  passwordHash String
+  googleId      String?  @unique
 
-  decks        Deck[]
+  displayName   String?
 
-  createdAt    DateTime @default(now())
+  avatar        String?
+
+  role          UserRole @default(USER)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  decks         Deck[]
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 model Deck {
-
-  id          String @id @default(cuid())
-
+  id          String   @id @default(cuid())
   name        String
-
   description String?
 
-  ownerId     String
-
-  owner        User @relation(fields: [ownerId], references: [id])
-
-  cards        DeckCard[]
+  isPublic    Boolean  @default(false)
+  format      String   @default("Standard")
 
   createdAt   DateTime @default(now())
-
   updatedAt   DateTime @updatedAt
+
+  ownerId     String
+  owner        User     @relation(fields: [ownerId], references: [id])
+
+  cards       DeckCard[]
 }
 
 model DeckCard {
@@ -190,9 +201,11 @@ enum Rarity {
   EPIC
   LEGENDARY
   PROMO
+  SHOWCASE
 }
 
 enum Orientation {
   PORTRAIT
   LANDSCAPE
 }
+

@@ -10,8 +10,13 @@ async function main() {
     console.log(`Fetched cards: total=${total} page=${page}/${pages} size=${size}`);
   
     let imported = 0;
-    for (const card of cards) {
-        await prisma.set.upsert({
+    for (var pageNum = 1; pageNum <= pages; pageNum++) {
+        const pageResponse = await fetch(`https://api.riftcodex.com/cards?page=${pageNum}`);
+        if (!pageResponse.ok) throw new Error(`Fetch failed: ${pageResponse.status}`);
+        const pageData = await pageResponse.json();
+        const pageCards = pageData.items || [];
+        for (const card of pageCards) {
+            await prisma.set.upsert({
   where: {
     id: card.set.set_id
   },
@@ -27,7 +32,7 @@ async function main() {
             where: { apiId: card.id },
             update: {
                 name: card.name,
-                cleanName: card.metadata?.clean_name,
+                cleanName: card.metadata?.clean_name ?? card.name ?? '',
                 collectorNumber: card.collector_number,
                 energy: card.attributes?.energy,
                 might: card.attributes?.might,
@@ -45,7 +50,7 @@ async function main() {
                 riftboundId: card.riftbound_id,
                 tcgplayerId: card.tcgplayer_id,
                 name: card.name,
-                cleanName: card.metadata?.clean_name,
+                cleanName: card.metadata?.clean_name ?? card.name ?? '',
                 collectorNumber: card.collector_number,
                 energy: card.attributes?.energy,
                 might: card.attributes?.might,
@@ -64,7 +69,8 @@ async function main() {
                 overnumbered: card.metadata?.overnumbered,
                 signature: card.metadata?.signature,
                 updatedOn: card.metadata?.updated_on ? new Date(card.metadata.updated_on) : undefined,
-                setId: card.set?.set_id
+                // link to the Set relation via nested connect so Prisma knows the relation
+                set: card.set?.set_id ? { connect: { id: card.set.set_id } } : undefined
             }
         });
 
@@ -95,6 +101,7 @@ async function main() {
         }
 
         imported++;
+    }
     }
 
     console.log(`Imported ${imported} cards`);
