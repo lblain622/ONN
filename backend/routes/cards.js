@@ -1,7 +1,7 @@
 import express from 'express';
 import asyncHandler from '../middleware/asyncHandler.js';
 import auth from '../middleware/auth.js';
-import { searchCards } from '../services/cards.js';
+import { searchCards } from '../services/cards.new.js';
 
 const router = express.Router();
 
