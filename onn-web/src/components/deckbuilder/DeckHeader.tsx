@@ -31,7 +31,7 @@ export function DeckHeader({
 
             <Button
                 variant="bordered"
-                startcontent={<ArrowLeft size={16}/>}
+                startContent={<ArrowLeft size={16}/>}
                 onPress={onBack}
             >
                 Back to Decks

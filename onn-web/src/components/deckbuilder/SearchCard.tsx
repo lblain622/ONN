@@ -1,5 +1,5 @@
 import React, {KeyboardEvent, useState} from "react";
-import {Card, CardContent, Tooltip} from "@heroui/react";
+import {Card, CardBody, Tooltip} from "@heroui/react";
 import {Check, Plus} from "lucide-react";
 
 import {CardOption} from "./types";
@@ -92,14 +92,14 @@ export function SearchCard({
                     </div>
                 </div>
 
-                <CardContent className="gap-1 p-3">
+                <CardBody className="gap-1 p-3">
                     <h4 className="truncate text-sm font-semibold">
                         {card.name}
                     </h4>
                     <p className="text-xs text-default-500">
                         {card.type}
                     </p>
-                </CardContent>
+                </CardBody>
             </Card>
         </Tooltip>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {use, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Alert, Button, Input} from "@heroui/react";
 import {Redo2, Save, Undo2} from "lucide-react";
@@ -31,7 +31,7 @@ function LoadingScreen() {
 }
 
 export default function DeckPage({params}: { params: Promise<{ id: string }> }) {
-    const {id} = params as { id: string };
+    const {id} = use(params);
     const router = useRouter();
 
     const {
@@ -50,7 +50,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     } = useDeckBuilder(id);
 
     const validation = useDeckValidation(builder);
-    const {state, undo, redo, canUndo, canRedo} = useUndoableBuilder(builder, setBuilder);
+    const {undo, redo, canUndo, canRedo} = useUndoableBuilder(builder, setBuilder);
 
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [targetSection, setTargetSection] = useState<keyof BuilderState>("mainDeck");
@@ -108,7 +108,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                         <Button
                                             color="primary"
                                             size="lg"
-                                            startcontent={!isSaving && <Save size={20}/>}
+                                            startContent={!isSaving && <Save size={20}/>}
                                             isLoading={isSaving}
                                             onPress={handleSave}
                                             isDisabled={!validation.isValid || isSaving}

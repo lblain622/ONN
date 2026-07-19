@@ -7,7 +7,7 @@ import {
   Badge,
   Button,
   Card,
-  CardContent,
+  CardBody,
   CardHeader,
   Chip,
   Dropdown,
@@ -100,7 +100,7 @@ function DeckSkeleton() {
                 </div>
                 <Skeleton className="h-6 w-16 rounded-full"/>
             </CardHeader>
-            <CardContent className="px-6 pb-6 pt-4">
+            <CardBody className="px-6 pb-6 pt-4">
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-full rounded-lg"/>
                     <Skeleton className="h-4 w-3/4 rounded-lg"/>
@@ -109,7 +109,7 @@ function DeckSkeleton() {
                     <Skeleton className="h-4 w-24 rounded-lg"/>
                     <Skeleton className="h-8 w-20 rounded-lg"/>
                 </div>
-            </CardContent>
+            </CardBody>
         </Card>
     );
 }
@@ -340,13 +340,13 @@ export default function DecksPage() {
                         color={isCommunity ? "primary" : "secondary"}
                         size="sm"
                         variant="flat"
-                        startcontent={isCommunity ? <Users size={12}/> : <Lock size={12}/>}
+                        startContent={isCommunity ? <Users size={12}/> : <Lock size={12}/>}
                     >
                         {isCommunity ? "Public" : deck.format || "Standard"}
                     </Chip>
                 </CardHeader>
 
-                <CardContent className="px-6 pb-6 pt-4">
+                <CardBody className="px-6 pb-6 pt-4">
                     <div className="space-y-2 text-sm">
                         <p className="text-zinc-300 flex items-center gap-2">
                             <span className="font-medium text-gold">Legend:</span>
@@ -387,7 +387,7 @@ export default function DecksPage() {
                                         color="primary"
                                         isDisabled={isCopyingThis}
                                         onPress={() => handleCopyDeck(deck)}
-                                        startcontent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
+                                        startContent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
                                             <Copy size={14}/>}
                                     >
                                         {isCopyingThis ? "Copying..." : "Copy"}
@@ -421,7 +421,7 @@ export default function DecksPage() {
                             </div>
                         )}
                     </div>
-                </CardContent>
+                </CardBody>
             </Card>
         );
     };
@@ -447,7 +447,7 @@ export default function DecksPage() {
                             color="primary"
                             className="mt-6"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
+                            startContent={<Plus size={16}/>}
                         >
                             Create Your First Deck
                         </Button>
@@ -498,14 +498,14 @@ export default function DecksPage() {
                         <Button
                             color="primary"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
+                            startContent={<Plus size={16}/>}
                         >
                             Create deck
                         </Button>
                         <Button
                             variant="ghost"
                             onPress={handleLogout}
-                            startcontent={<LogOut size={16}/>}
+                            startContent={<LogOut size={16}/>}
                         >
                             Sign out
                         </Button>
@@ -531,7 +531,7 @@ export default function DecksPage() {
                         placeholder="Search decks..."
                         value={searchTerm}
                         onChange={handleSearch}
-                        startcontent={<Search size={16} className="text-zinc-400"/>}
+                        startContent={<Search size={16} className="text-zinc-400"/>}
                         className="flex-1 min-w-[200px] max-w-md"
                         size="sm"
                         isClearable
@@ -544,7 +544,7 @@ export default function DecksPage() {
                                 <Button
                                     size="sm"
                                     variant="flat"
-                                    startcontent={<Filter size={14}/>}
+                                    startContent={<Filter size={14}/>}
                                 >
                                     Sort: {sortBy.replace("-", " ")}
                                 </Button>
@@ -555,16 +555,16 @@ export default function DecksPage() {
                                 selectedKeys={new Set([sortBy])}
                                 onSelectionChange={handleSortChange}
                             >
-                                <DropdownItem key="newest" startcontent={<SortDesc size={14}/>}>
+                                <DropdownItem key="newest" startContent={<SortDesc size={14}/>}>
                                     Newest first
                                 </DropdownItem>
-                                <DropdownItem key="oldest" startcontent={<SortAsc size={14}/>}>
+                                <DropdownItem key="oldest" startContent={<SortAsc size={14}/>}>
                                     Oldest first
                                 </DropdownItem>
-                                <DropdownItem key="name-asc" startcontent={<SortAsc size={14}/>}>
+                                <DropdownItem key="name-asc" startContent={<SortAsc size={14}/>}>
                                     Name (A-Z)
                                 </DropdownItem>
-                                <DropdownItem key="name-desc" startcontent={<SortDesc size={14}/>}>
+                                <DropdownItem key="name-desc" startContent={<SortDesc size={14}/>}>
                                     Name (Z-A)
                                 </DropdownItem>
                             </DropdownMenu>
@@ -647,7 +647,7 @@ export default function DecksPage() {
                                         <p className="text-sm text-zinc-400">This action cannot be undone</p>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="px-6 py-4">
+                                <CardBody className="px-6 py-4">
                                     <p className="text-zinc-300">
                                         Are you sure you want to delete <span
                                         className="font-semibold text-white">"{deckToDelete.name}"</span>?
@@ -656,7 +656,7 @@ export default function DecksPage() {
                                     {deleteError && (
                                         <Alert color="danger" title="Error" description={deleteError} className="mt-4"/>
                                     )}
-                                </CardContent>
+                                </CardBody>
                                 <div className="flex gap-3 px-6 pb-6 pt-2 justify-end">
                                     <Button variant="flat" onPress={closeDeleteModal}>
                                         Cancel
@@ -665,7 +665,7 @@ export default function DecksPage() {
                                         color="danger"
                                         isLoading={isDeleting === deckToDelete.id}
                                         onPress={handleDeleteDeck}
-                                        startcontent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
+                                        startContent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
                                     >
                                         {isDeleting === deckToDelete.id ? "Deleting..." : "Delete Deck"}
                                     </Button>
