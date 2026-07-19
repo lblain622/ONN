@@ -2,12 +2,18 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import * as authService from '../services/auth.js';
 import asyncHandler from '../middleware/asyncHandler.js';
-import auth from "../middleware/auth.js";
+import auth from '../middleware/auth.js';
+import { validate, loginSchema, registerSchema } from '../middleware/validate.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-a-secure-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 const SESSION_COOKIE_NAME = 'token';
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+}
 
 function setSessionCookie(res, token) {
     res.cookie(SESSION_COOKIE_NAME, token, {
@@ -18,68 +24,32 @@ function setSessionCookie(res, token) {
     });
 }
 
-router.post('/login', asyncHandler(async (req, res) => {
+router.post('/login', authLimiter, validate(loginSchema), asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
-    }
-
     const user = await authService.authenticateUser(email, password);
     const token = jwt.sign(
-        {
-            userId: user.id,
-            email: user.email,
-            role: user.role,
-        },
+        { userId: user.id, email: user.email, role: user.role },
         JWT_SECRET,
         { expiresIn: '30d' }
     );
-
     setSessionCookie(res, token);
-
-    res.status(200).json({
-        id: user.id,
-        email: user.email,
-        role: user.role,
-    });
+    res.status(200).json({ id: user.id, email: user.email, role: user.role });
 }));
 
-router.post('/register', asyncHandler(async (req, res) => {
+router.post('/register', authLimiter, validate(registerSchema), asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
-    }
-
     const newUser = await authService.registerUser(email, password);
     const token = jwt.sign(
-        {
-            userId: newUser.id,
-            email: newUser.email,
-            role: newUser.role,
-        },
+        { userId: newUser.id, email: newUser.email, role: newUser.role },
         JWT_SECRET,
         { expiresIn: '30d' }
     );
-
     setSessionCookie(res, token);
-
-    res.status(201).json({
-        id: newUser.id,
-        email: newUser.email,
-        role: newUser.role,
-    });
+    res.status(201).json({ id: newUser.id, email: newUser.email, role: newUser.role });
 }));
 
 router.get('/me', auth, asyncHandler(async (req, res) => {
-    if (!req.user || !req.user.userId) {
-        return res.status(401).json({ message: 'Not authenticated' });
-    }
-    
-    res.json({
-        id: req.user.userId,
-        email: req.user.email,
-        role: req.user.role,
-    });
+    res.json({ id: req.user.userId, email: req.user.email, role: req.user.role });
 }));
 
 router.post('/logout', asyncHandler(async (req, res) => {

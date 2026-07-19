@@ -5,15 +5,19 @@ import { searchCards } from '../services/cards.new.js';
 
 const router = express.Router();
 
+const VALID_CARD_TYPES = new Set(['UNIT', 'SPELL', 'LEGEND', 'GEAR', 'BATTLEFIELD', 'RUNE']);
+
 router.get('/search', auth, asyncHandler(async (req, res) => {
     const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
-    const cardType = typeof req.query.type === 'string' ? req.query.type.trim().toUpperCase() : '';
+    const rawType = typeof req.query.type === 'string' ? req.query.type.trim().toUpperCase() : '';
 
-    if (!query || query.length < 2) {
-        return res.json([]);
+    if (!query || query.length < 2) return res.json([]);
+
+    if (rawType && !VALID_CARD_TYPES.has(rawType)) {
+        return res.status(400).json({ message: `Invalid card type. Must be one of: ${[...VALID_CARD_TYPES].join(', ')}` });
     }
 
-    const cards = await searchCards(query, cardType || null);
+    const cards = await searchCards(query, rawType || null);
     res.json(cards);
 }));
 
