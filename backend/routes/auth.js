@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import * as authService from '../services/auth.js';
 import asyncHandler from '../middleware/asyncHandler.js';
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-a-secure-secret';
@@ -37,6 +38,7 @@ router.post('/login', asyncHandler(async (req, res) => {
     setSessionCookie(res, token);
 
     res.status(200).json({
+        id: user.id,
         email: user.email,
         role: user.role,
     });
@@ -62,8 +64,21 @@ router.post('/register', asyncHandler(async (req, res) => {
     setSessionCookie(res, token);
 
     res.status(201).json({
+        id: newUser.id,
         email: newUser.email,
         role: newUser.role,
+    });
+}));
+
+router.get('/me', auth, asyncHandler(async (req, res) => {
+    if (!req.user || !req.user.userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    res.json({
+        id: req.user.userId,
+        email: req.user.email,
+        role: req.user.role,
     });
 }));
 

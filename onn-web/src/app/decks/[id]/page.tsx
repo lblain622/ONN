@@ -8,7 +8,7 @@ import {BuilderState} from "@/components/deckbuilder/types";
 import {DeckHeader} from "@/components/deckbuilder/DeckHeader";
 import {DeckRules} from "@/components/deckbuilder/DeckRules";
 import {DeckStats} from "@/components/deckbuilder/DeckStats";
-import {SearchModal} from "@/components/deckbuilder/SearchModal";
+import SearchModal from "@/components/deckbuilder/SearchModal";
 import {LegendZone} from "@/components/deckbuilder/LegendZone";
 import {ChampionZone} from "@/components/deckbuilder/ChampionZone";
 import {RuneZone} from "@/components/deckbuilder/RuneZone";
@@ -108,7 +108,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                         <Button
                                             color="primary"
                                             size="lg"
-                                            startcontent={!isSaving && <Save size={20}/>}
+                                            startContent={!isSaving && <Save size={20}/>}
                                             isLoading={isSaving}
                                             onPress={handleSave}
                                             isDisabled={!validation.isValid || isSaving}

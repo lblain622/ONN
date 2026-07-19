@@ -88,7 +88,6 @@ export function SelectedCard({
                 {!readOnly && onRemove && !isHovered && (
                     <Button
                         size="sm"
-                        variant="light"
                         color="danger"
                         onPress={handleRemove}
                         className="shrink-0 min-w-0 px-2 opacity-60 hover:opacity-100"

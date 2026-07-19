@@ -10,6 +10,7 @@ import {
     ModalContainer,
     ModalFooter,
     ModalHeader,
+    Textarea,
 } from "@heroui/react";
 import {Search, X} from "lucide-react";
 
@@ -104,7 +105,7 @@ export function MainDeckPanel({
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     size="sm"
-                                    startcontent={<Search size={16} className="text-zinc-400"/>}
+                                    startContent={<Search size={16} className="text-zinc-400"/>}
                                     endContent={
                                         searchTerm && (
                                             <button
@@ -201,8 +202,7 @@ export function MainDeckPanel({
                         <p className="text-sm text-default-500">
                             Enter card names one per line. Cards will be added if they exist in the database.
                         </p>
-                        <Input
-                            as="textarea"
+                        <Textarea
                             placeholder="Card Name 1&#10;Card Name 2&#10;Card Name 3"
                             value={bulkInput}
                             onChange={(e) => setBulkInput(e.target.value)}

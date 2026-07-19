@@ -3,39 +3,39 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Chip,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Input,
-  Skeleton,
-  Tab,
-  Tabs,
-  Tooltip
+    Alert,
+    Badge,
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    Chip,
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownTrigger,
+    Input,
+    Skeleton,
+    Tab,
+    Tabs,
+    Tooltip
 } from "@heroui/react";
 import {
-  Clock,
-  Copy,
-  Edit,
-  Eye,
-  Filter,
-  Globe,
-  Loader2,
-  Lock,
-  LogOut,
-  Plus,
-  Search,
-  SortAsc,
-  SortDesc,
-  Trash2,
-  Users
+    Clock,
+    Copy,
+    Edit,
+    Eye,
+    Filter,
+    Globe,
+    Loader2,
+    Lock,
+    LogOut,
+    Plus,
+    Search,
+    SortAsc,
+    SortDesc,
+    Trash2,
+    Users
 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -340,7 +340,7 @@ export default function DecksPage() {
                         color={isCommunity ? "primary" : "secondary"}
                         size="sm"
                         variant="flat"
-                        startcontent={isCommunity ? <Users size={12}/> : <Lock size={12}/>}
+                        startContent={isCommunity ? <Users size={12}/> : <Lock size={12}/>}
                     >
                         {isCommunity ? "Public" : deck.format || "Standard"}
                     </Chip>
@@ -371,7 +371,7 @@ export default function DecksPage() {
 
                         {isCommunity ? (
                             <div className="flex gap-2">
-                                <Tooltip content="View this deck">
+                                <Tooltip>
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -384,10 +384,9 @@ export default function DecksPage() {
                                 <Tooltip content="Make your own copy">
                                     <Button
                                         size="sm"
-                                        color="primary"
                                         isDisabled={isCopyingThis}
                                         onPress={() => handleCopyDeck(deck)}
-                                        startcontent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
+                                        startContent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
                                             <Copy size={14}/>}
                                     >
                                         {isCopyingThis ? "Copying..." : "Copy"}
@@ -447,7 +446,7 @@ export default function DecksPage() {
                             color="primary"
                             className="mt-6"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
+                            startContent={<Plus size={16}/>}
                         >
                             Create Your First Deck
                         </Button>
@@ -498,14 +497,14 @@ export default function DecksPage() {
                         <Button
                             color="primary"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
+                            startContent={<Plus size={16}/>}
                         >
                             Create deck
                         </Button>
                         <Button
                             variant="ghost"
                             onPress={handleLogout}
-                            startcontent={<LogOut size={16}/>}
+                            startContent={<LogOut size={16}/>}
                         >
                             Sign out
                         </Button>
@@ -531,7 +530,7 @@ export default function DecksPage() {
                         placeholder="Search decks..."
                         value={searchTerm}
                         onChange={handleSearch}
-                        startcontent={<Search size={16} className="text-zinc-400"/>}
+                        startContent={<Search size={16} className="text-zinc-400"/>}
                         className="flex-1 min-w-[200px] max-w-md"
                         size="sm"
                         isClearable
@@ -544,7 +543,7 @@ export default function DecksPage() {
                                 <Button
                                     size="sm"
                                     variant="flat"
-                                    startcontent={<Filter size={14}/>}
+                                    startContent={<Filter size={14}/>}
                                 >
                                     Sort: {sortBy.replace("-", " ")}
                                 </Button>
@@ -555,16 +554,16 @@ export default function DecksPage() {
                                 selectedKeys={new Set([sortBy])}
                                 onSelectionChange={handleSortChange}
                             >
-                                <DropdownItem key="newest" startcontent={<SortDesc size={14}/>}>
+                                <DropdownItem key="newest" startContent={<SortDesc size={14}/>}>
                                     Newest first
                                 </DropdownItem>
-                                <DropdownItem key="oldest" startcontent={<SortAsc size={14}/>}>
+                                <DropdownItem key="oldest" startContent={<SortAsc size={14}/>}>
                                     Oldest first
                                 </DropdownItem>
-                                <DropdownItem key="name-asc" startcontent={<SortAsc size={14}/>}>
+                                <DropdownItem key="name-asc" startContent={<SortAsc size={14}/>}>
                                     Name (A-Z)
                                 </DropdownItem>
-                                <DropdownItem key="name-desc" startcontent={<SortDesc size={14}/>}>
+                                <DropdownItem key="name-desc" startContent={<SortDesc size={14}/>}>
                                     Name (Z-A)
                                 </DropdownItem>
                             </DropdownMenu>
@@ -662,10 +661,10 @@ export default function DecksPage() {
                                         Cancel
                                     </Button>
                                     <Button
-                                        color="danger"
+
                                         isLoading={isDeleting === deckToDelete.id}
                                         onPress={handleDeleteDeck}
-                                        startcontent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
+                                        startContent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
                                     >
                                         {isDeleting === deckToDelete.id ? "Deleting..." : "Delete Deck"}
                                     </Button>

@@ -20,14 +20,14 @@ type SearchModalProps = {
     ) => void;
 };
 
-export function SearchModal({
-                                isOpen,
-                                onOpenChange,
-                                targetSection,
-                                builder,
-                                onSearch,
-                                onSelect,
-                            }: SearchModalProps) {
+function SearchModal({
+                         isOpen,
+                         onOpenChange,
+                         targetSection,
+                         builder,
+                         onSearch,
+                         onSelect,
+                     }: SearchModalProps) {
     const section = builder[targetSection];
     const [query, setQuery] = useState("");
     const [cardType, setCardType] = useState("all");
@@ -110,9 +110,9 @@ export function SearchModal({
                                     placeholder="Search for cards..."
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    onKeyPress={handleKeyPress}
+                                    onKeyDown={handleKeyPress}
                                     className="flex-1"
-                                    startcontent={
+                                    startContent={
                                         <svg
                                             className="w-4 h-4 text-default-400"
                                             fill="none"
@@ -156,7 +156,7 @@ export function SearchModal({
                                     color="primary"
                                     onPress={handleSearch}
                                     isLoading={isSearching}
-                                    disabled={!query.trim() || isSearching}
+                                    isDisabled={!query.trim() || isSearching}
                                 >
                                     Search
                                 </Button>
@@ -229,3 +229,5 @@ export function SearchModal({
         </Modal>
     );
 }
+
+export default SearchModal

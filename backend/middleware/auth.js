@@ -9,11 +9,16 @@ export default function auth(req, res, next) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : cookieToken;
 
     if (!token) {
-        return res.status(401).json({ message: 'Unauthorized' });
+        return res.status(401).json({ message: 'Unauthorized: No token provided' });
     }
 
     try {
         const payload = jwt.verify(token, JWT_SECRET);
+        
+        if (!payload || typeof payload !== 'object') {
+            return res.status(401).json({ message: 'Invalid token payload' });
+        }
+        
         req.user = payload;
         next();
     } catch (error) {
@@ -24,8 +29,14 @@ export default function auth(req, res, next) {
 export function authorize(...allowedRoles) {
     return (req, res, next) => {
         if (!req.user) {
-            return res.status(401).json({ message: 'Unauthorized' });
+            return res.status(401).json({ message: 'Unauthorized: User not authenticated' });
         }
+        
+        if (!req.user.userId) {
+            console.error('Auth Error: req.user exists but userId is missing', req.user);
+            return res.status(401).json({ message: 'Unauthorized: Invalid user session' });
+        }
+
         if (allowedRoles.length && !allowedRoles.includes(req.user.role)) {
             return res.status(403).json({ message: 'Forbidden' });
         }
