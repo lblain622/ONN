@@ -1,5 +1,6 @@
 import React, {useState} from "react";
 import {Button, Card, Tooltip} from "@heroui/react";
+import type {PressEvent} from "@react-types/shared";
 import {X} from "lucide-react";
 import {CardOption} from "./types";
 import {CardImage} from "./CardImage";
@@ -21,8 +22,7 @@ export function SelectedCard({
                              }: SelectedCardProps) {
     const [isHovered, setIsHovered] = useState(false);
 
-    const handleRemove = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleRemove = (_e: PressEvent) => {
         onRemove?.(card.id);
     };
 

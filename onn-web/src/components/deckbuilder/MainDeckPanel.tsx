@@ -3,11 +3,11 @@ import {
     Badge,
     Button,
     Card,
-    CardContent,
+    CardBody,
     Input,
     Modal,
     ModalBody,
-    ModalContainer,
+    ModalContent,
     ModalFooter,
     ModalHeader,
     Textarea,
@@ -95,7 +95,7 @@ export function MainDeckPanel({
             </div>
 
             <Card shadow="sm" className="bg-black border border-gold/20">
-                <CardContent className="p-0">
+                <CardBody className="p-0">
                     {groupedCards.length > 0 ? (
                         <>
                             {/* Search bar */}
@@ -187,7 +187,7 @@ export function MainDeckPanel({
                             )}
                         </div>
                     )}
-                </CardContent>
+                </CardBody>
             </Card>
 
             {/* Bulk Add Modal */}
@@ -196,14 +196,14 @@ export function MainDeckPanel({
                 onOpenChange={setBulkModalOpen}
                 size="lg"
             >
-                <ModalContainer>
+                <ModalContent>
                     <ModalHeader>Bulk Add Cards</ModalHeader>
                     <ModalBody>
                         <p className="text-sm text-default-500">
                             Enter card names one per line. Cards will be added if they exist in the database.
                         </p>
                         <Textarea
-                            placeholder="Card Name 1&#10;Card Name 2&#10;Card Name 3"
+                            placeholder={"Card Name 1\nCard Name 2\nCard Name 3"}
                             value={bulkInput}
                             onChange={(e) => setBulkInput(e.target.value)}
                             className="mt-2"
@@ -218,7 +218,7 @@ export function MainDeckPanel({
                             Add Cards
                         </Button>
                     </ModalFooter>
-                </ModalContainer>
+                </ModalContent>
             </Modal>
         </section>
     );

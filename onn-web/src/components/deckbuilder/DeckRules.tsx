@@ -1,5 +1,5 @@
 import React from "react";
-import {Card, CardContent} from "@heroui/react";
+import {Card, CardBody} from "@heroui/react";
 import {Copy, Crown, Layers3, Shield, Sparkles,} from "lucide-react";
 
 export function DeckRules() {
@@ -31,7 +31,7 @@ export function DeckRules() {
             shadow="sm"
             className="border border-gold/20 bg-black"
         >
-            <CardContent className="space-y-4">
+            <CardBody className="space-y-4">
                 <div>
                     <h3 className="text-sm font-semibold text-gold">
                         Deck Rules
@@ -53,7 +53,7 @@ export function DeckRules() {
                         </div>
                     ))}
                 </div>
-            </CardContent>
+            </CardBody>
         </Card>
     );
 }

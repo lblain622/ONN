@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {Button, Input, Modal, ModalBody, ModalContainer, ModalFooter, ModalHeader, Spinner,} from "@heroui/react";
+import {Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner,} from "@heroui/react";
 
 import {BuilderState, CardOption} from "./types";
 import {SearchCard} from "./SearchCard";
@@ -91,7 +91,7 @@ function SearchModal({
             scrollBehavior="inside"
             backdrop="blur"
         >
-            <ModalContainer>
+            <ModalContent>
                 {(onClose) => (
                     <>
                         <ModalHeader className="flex flex-col gap-1">
@@ -225,7 +225,7 @@ function SearchModal({
                         </ModalFooter>
                     </>
                 )}
-            </ModalContainer>
+            </ModalContent>
         </Modal>
     );
 }

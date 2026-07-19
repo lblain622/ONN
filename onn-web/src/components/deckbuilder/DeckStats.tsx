@@ -1,6 +1,6 @@
 // components/deckbuilder/DeckStats.tsx
 import React, {useMemo} from "react";
-import {Card, CardContent, ProgressBar} from "@heroui/react";
+import {Card, CardBody, Progress} from "@heroui/react";
 import {BuilderState} from "./types";
 
 type DeckStatsProps = {
@@ -47,7 +47,7 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
 
     return (
         <Card className={`border border-gold/20 bg-black ${className}`}>
-            <CardContent className="space-y-4">
+            <CardBody className="space-y-4">
                 <div>
                     <h4 className="text-sm font-semibold text-gold">Deck Statistics</h4>
                     <p className="text-xs text-zinc-400">Overview of your deck composition</p>
@@ -62,7 +62,7 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                                 {stats.mainDeckCount}/40
                             </span>
                         </div>
-                        <ProgressBar
+                        <Progress
                             size="sm"
                             value={Math.min((stats.mainDeckCount / 40) * 100, 100)}
                             color={getProgressColor(stats.mainDeckCount, 40)}
@@ -78,7 +78,7 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                                 {stats.runeCount}/12
                             </span>
                         </div>
-                        <ProgressBar
+                        <Progress
                             size="sm"
                             value={Math.min((stats.runeCount / 12) * 100, 100)}
                             color={getProgressColor(stats.runeCount, 12)}
@@ -94,7 +94,7 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                                 {stats.battlefieldCount}/3
                             </span>
                         </div>
-                        <ProgressBar
+                        <Progress
                             size="sm"
                             value={Math.min((stats.battlefieldCount / 3) * 100, 100)}
                             color={getProgressColor(stats.battlefieldCount, 3)}
@@ -129,7 +129,7 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                         </div>
                     )}
                 </div>
-            </CardContent>
+            </CardBody>
         </Card>
     );
 }

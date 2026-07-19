@@ -3,39 +3,39 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
-    Alert,
-    Badge,
-    Button,
-    Card,
-    CardContent,
-    CardHeader,
-    Chip,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownTrigger,
-    Input,
-    Skeleton,
-    Tab,
-    Tabs,
-    Tooltip
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Input,
+  Skeleton,
+  Tab,
+  Tabs,
+  Tooltip
 } from "@heroui/react";
 import {
-    Clock,
-    Copy,
-    Edit,
-    Eye,
-    Filter,
-    Globe,
-    Loader2,
-    Lock,
-    LogOut,
-    Plus,
-    Search,
-    SortAsc,
-    SortDesc,
-    Trash2,
-    Users
+  Clock,
+  Copy,
+  Edit,
+  Eye,
+  Filter,
+  Globe,
+  Loader2,
+  Lock,
+  LogOut,
+  Plus,
+  Search,
+  SortAsc,
+  SortDesc,
+  Trash2,
+  Users
 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -100,7 +100,7 @@ function DeckSkeleton() {
                 </div>
                 <Skeleton className="h-6 w-16 rounded-full"/>
             </CardHeader>
-            <CardContent className="px-6 pb-6 pt-4">
+            <CardBody className="px-6 pb-6 pt-4">
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-full rounded-lg"/>
                     <Skeleton className="h-4 w-3/4 rounded-lg"/>
@@ -109,7 +109,7 @@ function DeckSkeleton() {
                     <Skeleton className="h-4 w-24 rounded-lg"/>
                     <Skeleton className="h-8 w-20 rounded-lg"/>
                 </div>
-            </CardContent>
+            </CardBody>
         </Card>
     );
 }
@@ -346,7 +346,7 @@ export default function DecksPage() {
                     </Chip>
                 </CardHeader>
 
-                <CardContent className="px-6 pb-6 pt-4">
+                <CardBody className="px-6 pb-6 pt-4">
                     <div className="space-y-2 text-sm">
                         <p className="text-zinc-300 flex items-center gap-2">
                             <span className="font-medium text-gold">Legend:</span>
@@ -371,7 +371,7 @@ export default function DecksPage() {
 
                         {isCommunity ? (
                             <div className="flex gap-2">
-                                <Tooltip>
+                                <Tooltip content="View this deck">
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -384,6 +384,7 @@ export default function DecksPage() {
                                 <Tooltip content="Make your own copy">
                                     <Button
                                         size="sm"
+                                        color="primary"
                                         isDisabled={isCopyingThis}
                                         onPress={() => handleCopyDeck(deck)}
                                         startContent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
@@ -420,7 +421,7 @@ export default function DecksPage() {
                             </div>
                         )}
                     </div>
-                </CardContent>
+                </CardBody>
             </Card>
         );
     };
@@ -646,7 +647,7 @@ export default function DecksPage() {
                                         <p className="text-sm text-zinc-400">This action cannot be undone</p>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="px-6 py-4">
+                                <CardBody className="px-6 py-4">
                                     <p className="text-zinc-300">
                                         Are you sure you want to delete <span
                                         className="font-semibold text-white">"{deckToDelete.name}"</span>?
@@ -655,13 +656,13 @@ export default function DecksPage() {
                                     {deleteError && (
                                         <Alert color="danger" title="Error" description={deleteError} className="mt-4"/>
                                     )}
-                                </CardContent>
+                                </CardBody>
                                 <div className="flex gap-3 px-6 pb-6 pt-2 justify-end">
                                     <Button variant="flat" onPress={closeDeleteModal}>
                                         Cancel
                                     </Button>
                                     <Button
-
+                                        color="danger"
                                         isLoading={isDeleting === deckToDelete.id}
                                         onPress={handleDeleteDeck}
                                         startContent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
