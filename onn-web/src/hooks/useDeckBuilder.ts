@@ -9,6 +9,15 @@ function createSection(type: string): SectionState {
     return {query: "", type, searchResults: [], selectedCards: []};
 }
 
+const NON_MAIN_DECK_TYPES = new Set(["LEGEND", "RUNE", "BATTLEFIELD"]);
+const SECTION_TYPE_FILTERS: Record<keyof BuilderState, string | null> = {
+    legend: "LEGEND",
+    champion: "UNIT",
+    mainDeck: null,
+    runes: "RUNE",
+    battlefields: "BATTLEFIELD",
+};
+
 export function useDeckBuilder(deckId: string) {
     const router = useRouter();
     const [builder, setBuilder] = useState<BuilderState>({
@@ -137,27 +146,38 @@ export function useDeckBuilder(deckId: string) {
         });
     }, []);
 
-    const handleSearch = useCallback(async (sectionKey: keyof BuilderState, query: string, cardType: string) => {
+    const handleSearch = useCallback(async (sectionKey: keyof BuilderState, query: string) => {
         try {
-            const typeParam = cardType === "all" ? builder[sectionKey].type : cardType.toUpperCase();
-            const response = await fetch(`${API_URL}/cards/search?query=${encodeURIComponent(query)}&type=${typeParam}`, {
+            const params = new URLSearchParams();
+            params.set("query", query);
+
+            const sectionType = SECTION_TYPE_FILTERS[sectionKey];
+            if (sectionType) {
+                params.set("type", sectionType);
+            }
+
+            const response = await fetch(`${API_URL}/cards/search?${params.toString()}`, {
                 credentials: "include",
             });
 
             if (!response.ok) throw new Error("Search failed");
-            const results = await response.json();
+            const results = await response.json() as CardOption[];
+            const searchResults = sectionKey === "mainDeck"
+                ? results.filter(card => !NON_MAIN_DECK_TYPES.has(card.type))
+                : results;
 
             setBuilder(prev => ({
                 ...prev,
                 [sectionKey]: {
                     ...prev[sectionKey],
-                    searchResults: results
+                    query,
+                    searchResults,
                 }
             }));
         } catch (error) {
             throw error;
         }
-    }, [builder]);
+    }, []);
 
     const handleSave = useCallback(async () => {
         setIsSaving(true);

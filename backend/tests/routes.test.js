@@ -7,6 +7,7 @@ vi.mock('../config/prisma.js', () => ({
         user: { findUnique: vi.fn(), create: vi.fn() },
         deck: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn(), findFirst: vi.fn() },
         deckCard: { createMany: vi.fn(), deleteMany: vi.fn() },
+        card: { findMany: vi.fn() },
     },
 }));
 
@@ -189,6 +190,16 @@ describe('GET /cards/search', () => {
             .set('Authorization', `Bearer ${makeToken()}`);
         expect(res.status).toBe(200);
         expect(res.body).toEqual([]);
+    });
+
+    it('returns all cards when query is empty', async () => {
+        prisma.card.findMany.mockResolvedValue([{ id: 'card_1', name: 'Fire Bolt', type: 'SPELL' }]);
+        const res = await request(app)
+            .get('/cards/search')
+            .set('Authorization', `Bearer ${makeToken()}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual([{ id: 'card_1', name: 'Fire Bolt', type: 'SPELL' }]);
     });
 
     it('returns 400 for invalid card type', async () => {

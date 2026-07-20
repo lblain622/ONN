@@ -1,10 +1,10 @@
 "use client";
 
-import {use, useState} from "react";
+import {use, useCallback, useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Alert, Button, Input} from "@heroui/react";
 import {Redo2, Save, Undo2} from "lucide-react";
-import {BuilderState} from "@/components/deckbuilder/types";
+import {BuilderState, CardOption} from "@/components/deckbuilder/types";
 import {DeckHeader} from "@/components/deckbuilder/DeckHeader";
 import {DeckRules} from "@/components/deckbuilder/DeckRules";
 
@@ -16,6 +16,7 @@ import {DeckBuilderLayout} from "@/components/deckbuilder/DeckBuilderLayout";
 import {useDeckBuilder} from "@/hooks/useDeckBuilder";
 import {useDeckValidation} from "@/hooks/useDeckValidation";
 import {useUndoableBuilder} from "@/hooks/useUndoableBuilder";
+
 
 function LoadingScreen() {
     return (
@@ -50,12 +51,66 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
 
     const validation = useDeckValidation(builder);
     const {undo, redo, canUndo, canRedo} = useUndoableBuilder(builder, setBuilder);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchType, setSearchType] = useState<SearchType>("MAIN_DECK");
+    const [searchResults, setSearchResults] = useState<CardOption[]>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const searchCards = useCallback(async () => {
+        setSearchLoading(true);
 
-    const [targetSection, setTargetSection] = useState<keyof BuilderState>("mainDeck");
+        try {
+            const params = new URLSearchParams();
 
-    const handleOpenSearch = (section: keyof BuilderState) => {
-        setTargetSection(section);
-    };
+            if (searchQuery.trim()) {
+                params.set("query", searchQuery.trim());
+            }
+
+            params.set("type", searchType);
+
+            const response = await fetch(
+                `http://localhost:3001/cards/search?${params}`,
+                {
+                    credentials: "include",
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Search failed");
+            }
+
+            setSearchResults(await response.json());
+        } finally {
+            setSearchLoading(false);
+        }
+    }, [searchQuery, searchType]);
+
+    function searchTypeToSection(
+        type: SearchType
+    ): keyof BuilderState {
+
+        switch (type) {
+            case "LEGEND":
+                return "legend";
+
+            case "CHAMPION":
+                return "champion";
+
+            case "BATTLEFIELD":
+                return "battlefields";
+
+            case "RUNE":
+                return "runes";
+
+            default:
+                return "mainDeck";
+        }
+    }
+
+    useEffect(() => {
+        const timeout = setTimeout(searchCards, 300);
+
+        return () => clearTimeout(timeout);
+    }, [searchCards]);
 
     const handleAddCopy = (cardId: string) => {
         // Find the first card with this ID in selectedCards and add a copy
@@ -68,6 +123,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     if (loading) {
         return <LoadingScreen/>;
     }
+
 
     const header = (
         <div className="flex flex-col gap-6">
@@ -163,13 +219,26 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
             )}
         </div>
     );
+    type SearchType =
+        | "MAIN_DECK"
+        | "LEGEND"
+        | "CHAMPION"
+        | "BATTLEFIELD"
+        | "RUNE";
 
     const leftPanel = (
         <SearchPanel
-            targetSection={targetSection}
-            builder={builder}
-            onSearch={handleSearch}
-            onSelect={handleSelect}
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+
+            searchType={searchType}
+            onSearchTypeChange={setSearchType}
+
+            loading={searchLoading}
+
+            results={searchResults}
+
+            onSelect={(card) => handleSelect(searchTypeToSection(searchType), card)}
         />
     );
 
@@ -184,39 +253,40 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
         </div>
     );
 
-    const bottomPanel = (
-        <ZonesPanel
-            legend={builder.legend.selectedCards[0]}
-            champion={builder.champion.selectedCards[0]}
-            runes={builder.runes.selectedCards}
-            battlefields={builder.battlefields.selectedCards}
-            isReadOnly={isReadOnly}
-            onOpenSearch={handleOpenSearch}
-            onRemove={handleRemove}
-        />
-    );
+    // const bottomPanel = (
+    //     <ZonesPanel
+    //         legend={builder.legend.selectedCards[0]}
+    //         champion={builder.champion.selectedCards[0]}
+    //         runes={builder.runes.selectedCards}
+    //         battlefields={builder.battlefields.selectedCards}
+    //         isReadOnly={isReadOnly}
+    //         onOpenSearch={handleOpenSearch}
+    //         onRemove={handleRemove}
+    //     />
+    // );
 
-    const rightSidebar = (
-        <div className="space-y-4">
-            <DeckStatsSidebar
-                mainDeckCount={builder.mainDeck.selectedCards.length}
-                runeCount={builder.runes.selectedCards.length}
-                battlefieldCount={builder.battlefields.selectedCards.length}
-                isValid={validation.isValid}
-                validationErrors={validation.errors}
-                validationWarnings={validation.warnings}
-            />
-            {!isReadOnly && <DeckRules/>}
-        </div>
-    );
+    // const rightSidebar = (
+    //     <div className="space-y-4">
+    //         <DeckStatsSidebar
+    //             mainDeckCount={builder.mainDeck.selectedCards.length}
+    //             runeCount={builder.runes.selectedCards.length}
+    //             battlefieldCount={builder.battlefields.selectedCards.length}
+    //             isValid={validation.isValid}
+    //             validationErrors={validation.errors}
+    //             validationWarnings={validation.warnings}
+    //         />
+    //         {!isReadOnly && <DeckRules/>}
+    //     </div>
+    // );
+
+
 
     return (
         <DeckBuilderLayout
             header={header}
             leftPanel={leftPanel}
             rightPanel={rightPanel}
-            rightSidebar={rightSidebar}
-            bottomPanel={bottomPanel}
+
         />
     );
 }

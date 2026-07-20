@@ -1,4 +1,6 @@
 import React, { ReactNode } from "react";
+import { SplitPane, Pane } from "react-split-pane";
+import { usePersistence } from "react-split-pane/persistence";
 
 type DeckBuilderLayoutProps = {
   header: ReactNode;
@@ -9,36 +11,39 @@ type DeckBuilderLayoutProps = {
 };
 
 export function DeckBuilderLayout({
-  header,
-  leftPanel,
-  rightPanel,
-  rightSidebar,
-  bottomPanel,
-}: DeckBuilderLayoutProps) {
+                                    header,
+                                    leftPanel,
+                                    rightPanel,
+
+                                  }: DeckBuilderLayoutProps) {
+  const [sizes, setSizes] = usePersistence({
+    key: "deck-builder-layout",
+  });
+
   return (
-    <div className="min-h-screen bg-darkblue text-white pb-20">
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header */}
-        <div className="mb-8">{header}</div>
+      <div className="min-h-screen bg-darkblue text-white">
+        <div className="max-w-full mx-auto p-4">
+          <div className="mb-6">{header}</div>
 
-        {/* Two/Three-Panel Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-          {/* Left Panel - Card Search */}
-          <div className="lg:col-span-5 order-2 lg:order-1">{leftPanel}</div>
+          <SplitPane
+              split="vertical"
+              sizes={sizes}
+              onChange={setSizes}
+              className="h-[calc(100vh-180px)]"
+          >
+            <Pane minSize={280} defaultSize={320}>
+              {leftPanel}
+            </Pane>
 
-          {/* Right Panel - Deck List */}
-          <div className="lg:col-span-4 order-1 lg:order-2">{rightPanel}</div>
-
-          {/* Right Sidebar - Stats & Rules */}
-          {rightSidebar && (
-            <div className="lg:col-span-3 order-3">{rightSidebar}</div>
-          )}
+            <Pane minSize={400}>
+              <div className="flex h-full">
+                <div className="flex-1 overflow-auto">
+                  {rightPanel}
+                </div>
+              </div>
+            </Pane>
+          </SplitPane>
         </div>
-
-        {/* Bottom Panel - Zones */}
-        <div className="mt-12">{bottomPanel}</div>
       </div>
-    </div>
   );
 }
-
