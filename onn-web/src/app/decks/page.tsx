@@ -472,6 +472,21 @@ export default function DecksPage() {
         </div>
     );
 
+    const communityDeckContent = isLoadingCommunity ? (
+        renderSkeletons()
+    ) : !canShowCommunityDecks ? (
+        <div className="rounded-2xl border border-gold/20 bg-black p-12 text-center shadow-sm">
+            <div className="text-6xl mb-4">🌐</div>
+            <h2 className="text-2xl font-semibold">No public decks yet</h2>
+            <p className="mt-2 text-sm text-zinc-400 max-w-md mx-auto">
+                Community decks will appear here when players share their creations.
+                Be the first to share your deck with the community!
+            </p>
+        </div>
+    ) : (
+        renderDeckList(filteredAndSortedDecks, true)
+    );
+
     return (
         <div className="min-h-screen bg-darkblue px-4 py-8 text-white">
             <div className="mx-auto max-w-7xl flex flex-col gap-6">
@@ -616,20 +631,7 @@ export default function DecksPage() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {isLoadingCommunity ? (
-                            renderSkeletons()
-                        ) : !canShowCommunityDecks ? (
-                            <div className="rounded-2xl border border-gold/20 bg-black p-12 text-center shadow-sm">
-                                <div className="text-6xl mb-4">🌐</div>
-                                <h2 className="text-2xl font-semibold">No public decks yet</h2>
-                                <p className="mt-2 text-sm text-zinc-400 max-w-md mx-auto">
-                                    Community decks will appear here when players share their creations.
-                                    Be the first to share your deck with the community!
-                                </p>
-                            </div>
-                        ) : (
-                            renderDeckList(filteredAndSortedDecks, true)
-                        )}
+                        {communityDeckContent}
                     </div>
                 )}
 
