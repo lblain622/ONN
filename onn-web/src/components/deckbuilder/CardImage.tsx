@@ -34,6 +34,7 @@ export function CardImage({
                     loading="lazy"
                     decoding="async"
                     draggable={false}
+                    aria-label = {card.name}
                     className="
             h-full
             w-full
