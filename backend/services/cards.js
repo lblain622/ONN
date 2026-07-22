@@ -60,43 +60,103 @@ export async function searchCards(query, cardType = null) {
             mode: "insensitive",
         };
     }
+    async function getChampionPrefixes() {
+        const legends = await prisma.card.findMany({
+            where: {
+                type: "LEGEND",
+            },
+            select: {
+                name: true,
+            },
+        });
+
+        return new Set(
+            legends.map(card => card.name.split(" - ")[0].trim())
+        );
+    }
 
     switch (cardType) {
 
-        case "MAIN_DECK":
-            where.type = {
-                notIn: [
-                    "LEGEND",
-                    "TOKEN",
-                    "RUNE",
-                ],
-            };
-            break;
-
-        case "CHAMPION": {
+        case "MAIN_DECK": {
             const legends = await prisma.card.findMany({
+                where: { type: "LEGEND" },
+                select: { name: true },
+            });
+
+            const legendPrefixes = new Set(
+                legends.map(card => card.name.split(" - ")[0].trim())
+            );
+
+            const cards = await prisma.card.findMany({
                 where: {
-                    type: "LEGEND",
+                    ...(normalizedQuery && {
+                        name: {
+                            contains: normalizedQuery,
+                            mode: "insensitive",
+                        },
+                    }),
+                    type: {
+                        notIn: [
+                            "LEGEND",
+                            "RUNE",
+                            "BATTLEFIELD",
+                        ],
+                    },
                 },
-                select: {
-                    name: true,
+                include: {
+                    set: true,
+                    tags: { include: { tag: true } },
+                    domains: { include: { domain: true } },
+                },
+                orderBy: {
+                    name: "asc",
                 },
             });
 
-            const championNames = legends.map((card) =>
-                getCharacterName(card.name)
-            );
+            return cards.filter(card => {
+                if (card.type !== "UNIT") {
+                    return true;
+                }
 
-            where.type = "UNIT";
+                const prefix = card.name.split(" - ")[0].trim();
+                return !legendPrefixes.has(prefix);
+            });
+        }
 
-            where.OR = championNames.map((name) => ({
-                name: {
-                    startsWith: `${name} -`,
-                    mode: "insensitive",
+        case "CHAMPION": {
+            const championPrefixes = await getChampionPrefixes();
+
+            const units = await prisma.card.findMany({
+                where: {
+                    ...(normalizedQuery && {
+                        name: {
+                            contains: normalizedQuery,
+                            mode: "insensitive",
+                        },
+                    }),
+                    type: "UNIT",
                 },
-            }));
+                include: {
+                    set: true,
+                    tags: {
+                        include: {
+                            tag: true,
+                        },
+                    },
+                    domains: {
+                        include: {
+                            domain: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    name: "asc",
+                },
+            });
 
-            break;
+            return units.filter((card) =>
+                championPrefixes.has(card.name.split(" - ")[0].trim())
+            );
         }
 
         case "LEGEND":
@@ -117,7 +177,7 @@ export async function searchCards(query, cardType = null) {
             }
     }
 
-    return prisma.card.findMany({
+    const cards = await prisma.card.findMany({
         where,
         orderBy: {
             name: "asc",
@@ -136,4 +196,10 @@ export async function searchCards(query, cardType = null) {
             },
         },
     });
+
+    return cards.map(card => ({
+        ...card,
+        domains: card?.domains.map(d => d.domain.name),
+        tags: card?.tags.map(t => t.tag.name),
+    }));
 }

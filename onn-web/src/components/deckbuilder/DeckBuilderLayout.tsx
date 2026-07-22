@@ -14,7 +14,6 @@ export function DeckBuilderLayout({
                                     header,
                                     leftPanel,
                                     rightPanel,
-
                                   }: DeckBuilderLayoutProps) {
   const [sizes, setSizes] = usePersistence({
     key: "deck-builder-layout",

@@ -11,59 +11,58 @@ datasource db {
   provider = "postgresql"
 }
 
-
 model Card {
-  id               String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // External IDs
-  apiId            String   @unique
-  riftboundId      String   
-  tcgplayerId      String?
+  apiId       String  @unique
+  riftboundId String
+  tcgplayerId String?
 
   // Basic
-  name             String
-  cleanName        String?
-  collectorNumber  Int
+  name            String
+  cleanName       String?
+  collectorNumber Int
 
   // Stats
-  energy           Int?
-  might            Int?
-  power            Int?
+  energy Int?
+  might  Int?
+  power  Int?
 
   // Classification
-  type             CardType
-  supertype        String?
-  rarity           Rarity
+  type      CardType
+  supertype String?
+  rarity    Rarity
 
   // Text
-  richText         String   @db.Text
-  plainText        String   @db.Text
-  flavorText       String?  @db.Text
+  richText   String  @db.Text
+  plainText  String  @db.Text
+  flavorText String? @db.Text
 
   // Media
-  imageUrl         String
-  artist           String
-  accessibility    String
+  imageUrl      String
+  artist        String
+  accessibility String
 
   // Metadata
-  orientation      Orientation
+  orientation Orientation
 
-  alternateArt     Boolean
-  overnumbered     Boolean
-  signature        Boolean
+  alternateArt Boolean
+  overnumbered Boolean
+  signature    Boolean
 
-  updatedOn        DateTime
+  updatedOn DateTime
 
   // Relationships
-  setId            String
-  set              Set @relation(fields: [setId], references: [id])
+  setId String
+  set   Set    @relation(fields: [setId], references: [id])
 
-  domains          CardDomain[]
-  tags             CardTag[]
-  deckCards        DeckCard[]
+  domains   CardDomain[]
+  tags      CardTag[]
+  deckCards DeckCard[]
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name])
   @@index([cleanName])
@@ -71,81 +70,75 @@ model Card {
 }
 
 model Set {
+  id String @id
 
-  id          String @id
+  label String
 
-  label       String
-
-  cards       Card[]
+  cards Card[]
 }
 
 model Domain {
+  id String @id @default(cuid())
 
-  id      String @id @default(cuid())
+  name String @unique
 
-  name    String @unique
-
-  cards   CardDomain[]
+  cards CardDomain[]
 }
 
 model CardDomain {
+  cardId String
 
-  cardId      String
+  domainId String
 
-  domainId    String
+  card Card @relation(fields: [cardId], references: [id])
 
-  card         Card @relation(fields: [cardId], references: [id])
-
-  domain       Domain @relation(fields: [domainId], references: [id])
+  domain Domain @relation(fields: [domainId], references: [id])
 
   @@id([cardId, domainId])
 }
 
 model Tag {
+  id String @id @default(cuid())
 
-  id      String @id @default(cuid())
-
-  name    String @unique
+  name String @unique
 
   official Boolean @default(false)
 
-  cards   CardTag[]
+  cards CardTag[]
 }
 
 model CardTag {
+  cardId String
 
-  cardId      String
+  tagId String
 
-  tagId       String
+  card Card @relation(fields: [cardId], references: [id])
 
-  card         Card @relation(fields: [cardId], references: [id])
-
-  tag          Tag @relation(fields: [tagId], references: [id])
+  tag Tag @relation(fields: [tagId], references: [id])
 
   @@id([cardId, tagId])
 }
 
 model User {
+  id String @id @default(cuid())
 
-  id            String   @id @default(cuid())
+  username String @unique
+  email    String @unique
 
-  username      String   @unique
-  email         String   @unique
+  passwordHash String?
 
-  passwordHash  String?
+  googleId String? @unique
 
-  googleId      String?  @unique
+  displayName String?
 
-  displayName   String?
+  avatar String?
 
-  avatar        String?
+  role UserRole @default(USER)
 
-  role          UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  decks         Deck[]
+  decks Deck[]
 }
 
 enum UserRole {
@@ -154,33 +147,32 @@ enum UserRole {
 }
 
 model Deck {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
 
-  isPublic    Boolean  @default(false)
-  format      String   @default("Standard")
+  isPublic Boolean @default(false)
+  format   String  @default("Standard")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  ownerId     String
-  owner        User     @relation(fields: [ownerId], references: [id])
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
 
-  cards       DeckCard[]
+  cards DeckCard[]
 }
 
 model DeckCard {
+  deckId String
 
-  deckId      String
+  cardId String
 
-  cardId      String
+  quantity Int
 
-  quantity    Int
+  deck Deck @relation(fields: [deckId], references: [id])
 
-  deck         Deck @relation(fields: [deckId], references: [id])
-
-  card         Card @relation(fields: [cardId], references: [id])
+  card Card @relation(fields: [cardId], references: [id])
 
   @@id([deckId, cardId])
 }
@@ -208,4 +200,3 @@ enum Orientation {
   PORTRAIT
   LANDSCAPE
 }
-

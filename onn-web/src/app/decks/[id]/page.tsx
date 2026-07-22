@@ -1,17 +1,13 @@
 "use client";
 
-import {use, useCallback, useEffect, useState} from "react";
+import {use, useCallback, useEffect, useState,useMemo} from "react";
 import {useRouter} from "next/navigation";
 import {Alert, Button, Input} from "@heroui/react";
 import {Redo2, Save, Undo2} from "lucide-react";
 import {BuilderState, CardOption} from "@/components/deckbuilder/types";
 import {DeckHeader} from "@/components/deckbuilder/DeckHeader";
-import {DeckRules} from "@/components/deckbuilder/DeckRules";
-
-import {DeckStatsSidebar} from "@/components/deckbuilder/DeckStatsSidebar";
 import {SearchPanel} from "@/components/deckbuilder/SearchPanel";
 import {DeckListPanel} from "@/components/deckbuilder/DeckListPanel";
-import {ZonesPanel} from "@/components/deckbuilder/ZonesPanel";
 import {DeckBuilderLayout} from "@/components/deckbuilder/DeckBuilderLayout";
 import {useDeckBuilder} from "@/hooks/useDeckBuilder";
 import {useDeckValidation} from "@/hooks/useDeckValidation";
@@ -34,20 +30,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     const {id} = use(params);
     const router = useRouter();
 
-    const {
-        builder,
-        setBuilder,
-        deckName,
-        setDeckName,
-        loading,
-        isSaving,
-        isReadOnly,
-        error: loadError,
-        handleSelect,
-        handleRemove,
-        handleSearch,
-        handleSave,
-    } = useDeckBuilder(id);
+    const {builder, setBuilder, deckName, setDeckName, loading, isSaving, isReadOnly, error: loadError, handleSelect, handleRemove, handleSave,} = useDeckBuilder(id);
 
     const validation = useDeckValidation(builder);
     const {undo, redo, canUndo, canRedo} = useUndoableBuilder(builder, setBuilder);
@@ -68,7 +51,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
             params.set("type", searchType);
 
             const response = await fetch(
-                `http://localhost:3001/cards/search?${params}`,
+                `http://localhost:3000/cards/search?${params}`,
                 {
                     credentials: "include",
                 }
@@ -84,27 +67,6 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
         }
     }, [searchQuery, searchType]);
 
-    function searchTypeToSection(
-        type: SearchType
-    ): keyof BuilderState {
-
-        switch (type) {
-            case "LEGEND":
-                return "legend";
-
-            case "CHAMPION":
-                return "champion";
-
-            case "BATTLEFIELD":
-                return "battlefields";
-
-            case "RUNE":
-                return "runes";
-
-            default:
-                return "mainDeck";
-        }
-    }
 
     useEffect(() => {
         const timeout = setTimeout(searchCards, 300);
@@ -113,7 +75,6 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     }, [searchCards]);
 
     const handleAddCopy = (cardId: string) => {
-        // Find the first card with this ID in selectedCards and add a copy
         const cardToAdd = builder.mainDeck.selectedCards.find(c => c.id === cardId);
         if (cardToAdd) {
             handleSelect("mainDeck", cardToAdd);
@@ -238,48 +199,44 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
 
             results={searchResults}
 
-            onSelect={(card) => handleSelect(searchTypeToSection(searchType), card)}
+            onSelect={(card) => {
+
+                switch (searchType) {
+
+                    case "LEGEND":
+                        handleSelect("legend", card);
+                        break;
+
+                    case "CHAMPION":
+                        handleSelect("champion", card);
+                        break;
+
+                    case "BATTLEFIELD":
+                        handleSelect("battlefields", card);
+                        break;
+
+                    case "RUNE":
+                        handleSelect("runes", card);
+                        break;
+
+                    default:
+                        handleSelect("mainDeck", card);
+                }
+
+            }}
         />
     );
 
     const rightPanel = (
         <div className="space-y-6">
             <DeckListPanel
-                selectedCards={builder.mainDeck.selectedCards}
+                builder={builder}
                 isReadOnly={isReadOnly}
-                onRemove={(cid) => handleRemove("mainDeck", cid)}
-                onAdd={!isReadOnly ? handleAddCopy : undefined}
+                onRemove={handleRemove}
+                onAddCopy={!isReadOnly ? handleAddCopy : undefined}
             />
         </div>
     );
-
-    // const bottomPanel = (
-    //     <ZonesPanel
-    //         legend={builder.legend.selectedCards[0]}
-    //         champion={builder.champion.selectedCards[0]}
-    //         runes={builder.runes.selectedCards}
-    //         battlefields={builder.battlefields.selectedCards}
-    //         isReadOnly={isReadOnly}
-    //         onOpenSearch={handleOpenSearch}
-    //         onRemove={handleRemove}
-    //     />
-    // );
-
-    // const rightSidebar = (
-    //     <div className="space-y-4">
-    //         <DeckStatsSidebar
-    //             mainDeckCount={builder.mainDeck.selectedCards.length}
-    //             runeCount={builder.runes.selectedCards.length}
-    //             battlefieldCount={builder.battlefields.selectedCards.length}
-    //             isValid={validation.isValid}
-    //             validationErrors={validation.errors}
-    //             validationWarnings={validation.warnings}
-    //         />
-    //         {!isReadOnly && <DeckRules/>}
-    //     </div>
-    // );
-
-
 
     return (
         <DeckBuilderLayout

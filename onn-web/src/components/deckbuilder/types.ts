@@ -1,11 +1,12 @@
 export type CardOption = {
+    cost: number;
     id: string;
     name: string;
     type: string;
     imageUrl?: string;
     richText?: string;
-    domains?: Array<{ domain: { name: string } }>;
-    tags?: Array<{ tag: { name: string } }>;
+    domains: string[];
+    tags?: string[];
 };
 
 export type SectionState = {

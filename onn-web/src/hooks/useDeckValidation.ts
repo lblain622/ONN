@@ -28,6 +28,14 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
         const runeCount = builder.runes.selectedCards.length;
         const battlefieldCount = builder.battlefields.selectedCards.length;
         const totalCards = mainDeckCount + championCount + runeCount + battlefieldCount;
+        //legendCount
+        const legendCount = builder.legend.selectedCards.length;
+
+        if (legendCount === 0)
+            errors.push("You must select exactly 1 Legend");
+
+        if (legendCount > 1)
+            errors.push("You may only have 1 Legend");
 
         // Champion validation
         if (championCount === 0) {
@@ -39,9 +47,9 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
         // Main deck validation (including champion)
         const mainDeckTotal = mainDeckCount + championCount;
         if (mainDeckTotal < 40) {
-            errors.push(`Main deck needs ${40 - mainDeckTotal} more cards (currently ${mainDeckTotal}/40)`);
+            errors.push(`Main deck needs ${39 - mainDeckTotal} more cards (currently ${mainDeckTotal}/40)`);
         } else if (mainDeckTotal > 40) {
-            errors.push(`Main deck has ${mainDeckTotal - 40} too many cards (currently ${mainDeckTotal}/40)`);
+            errors.push(`Main deck has ${mainDeckTotal - 39} too many cards (currently ${mainDeckTotal}/40)`);
         }
 
         // Rune validation
@@ -61,13 +69,14 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
         // Duplicate validation
         const allCards = [
             ...builder.mainDeck.selectedCards,
-            ...builder.runes.selectedCards,
-            ...builder.battlefields.selectedCards,
+            ...builder.champion.selectedCards,
         ];
 
         const duplicateCounts = new Map<string, number>();
-        allCards.forEach(card => {
-            duplicateCounts.set(card.id, (duplicateCounts.get(card.id) || 0) + 1);
+
+        builder.mainDeck.selectedCards.forEach(card => {
+            duplicateCounts.set(card.id,
+                (duplicateCounts.get(card.id) ?? 0) + 1);
         });
 
         duplicateCounts.forEach((count, cardId) => {
@@ -90,6 +99,25 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
             if (!hasDuplicates && allCards.length > 0) {
                 warnings.push("Highlander deck! All cards are unique.");
             }
+        }
+
+        //Rune Validation
+        const champion = builder.champion.selectedCards[0];
+
+        if (champion) {
+            const championDomains = new Set(champion.domains);
+
+            builder.runes.selectedCards.forEach(rune => {
+                const valid = rune?.domains.some(domain =>
+                    championDomains.has(domain)
+                );
+
+                if (!valid) {
+                    errors.push(
+                        `${rune.name} cannot be used with ${champion.name}`
+                    );
+                }
+            });
         }
 
         return {

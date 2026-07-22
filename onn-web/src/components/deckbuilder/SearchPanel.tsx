@@ -68,6 +68,8 @@ export function SearchPanel({ onSelect }: SearchPanelProps) {
       }
 
       const data = await response.json();
+      console.log(data);
+      console.log(data.filter((c: any) => c === undefined));
 
       setResults(data);
     } catch (err) {
@@ -129,7 +131,7 @@ export function SearchPanel({ onSelect }: SearchPanelProps) {
                 <SearchCard
                     key={card.id}
                     card={card}
-                    onClick={() => onSelect(card)}
+                    onSelect={() => onSelect(card)}
                 />
             ))}
           </div>

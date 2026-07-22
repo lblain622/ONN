@@ -17,6 +17,7 @@ export function SearchCard({
                                isSelected = false,
                            }: SearchCardProps) {
     const [isHovered, setIsHovered] = useState(false);
+    console.log(card)
 
     function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
         if (event.key === "Enter" || event.key === " ") {
@@ -29,7 +30,7 @@ export function SearchCard({
         <Tooltip
             content={
                 <div className="max-w-xs p-2">
-                    <p className="font-bold">{card.name}</p>
+                    <p className="font-bold">{card?.name}</p>
                     <p className="text-sm text-default-400">{card.type}</p>
                     {card.richText && (
                         <div className="mt-2 text-xs" dangerouslySetInnerHTML={{__html: card.richText}}/>

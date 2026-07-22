@@ -63,36 +63,20 @@ export function MainDeckPanel({
     };
 
     return (
+
         <section className="space-y-4">
+
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-sm font-semibold uppercase tracking-widest text-gold">
                         Main Deck
                     </h3>
                     <p className="text-xs text-zinc-400">
-                        {selectedCards.length} / 40 cards
+                        {selectedCards.length} / 39 cards
                     </p>
                 </div>
 
-                {!isReadOnly && (
-                    <div className="flex gap-2">
-                        <Button
-                            size="sm"
-                            variant="flat"
-                            onPress={() => setBulkModalOpen(true)}
-                        >
-                            Bulk Add
-                        </Button>
-                        <Button
-                            size="sm"
-                            color="primary"
-                            onPress={onOpenSearch}
-                        >
-                            Quick Add
-                        </Button>
-                    </div>
-                )}
-            </div>
+
 
             <Card shadow="sm" className="bg-black border border-gold/20">
                 <CardBody className="p-0">

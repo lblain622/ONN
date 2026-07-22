@@ -186,7 +186,7 @@ export default function DecksPage() {
         const decksToFilter = activeTab === "my-decks" ? decks : communityDecks;
 
         // Filter
-        let filtered = decksToFilter.filter(deck =>
+        const filtered = decksToFilter.filter(deck =>
             deck.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (deck.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
             (deck.owner?.username?.toLowerCase() || "").includes(searchTerm.toLowerCase())

@@ -18,6 +18,7 @@ router.get('/search', auth, asyncHandler(async (req, res) => {
     }
 
     const cards = await searchCards(query, rawType || null);
+    console.log(cards);
     res.json(cards);
 }));
 
