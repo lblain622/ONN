@@ -43,3 +43,14 @@ export async function checkUserExists(email) {
     return user !== null;
 }
 
+export async function getUserById(userId) {
+    return prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            email: true,
+            username: true,
+            role: true,
+        },
+    });
+}

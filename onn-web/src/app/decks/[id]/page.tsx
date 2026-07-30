@@ -42,6 +42,8 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
         loading,
         isSaving,
         isReadOnly,
+        isPublic,
+        setIsPublic,
         error: loadError,
         handleSelect,
         handleRemove,
@@ -104,6 +106,14 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                             title="Redo"
                                         >
                                             <Redo2 size={18}/>
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="flat"
+                                            color={isPublic ? "success" : "default"}
+                                            onPress={() => setIsPublic((prev) => !prev)}
+                                        >
+                                            {isPublic ? "Public deck" : "Private deck"}
                                         </Button>
                                         <Button
                                             color="primary"
