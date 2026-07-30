@@ -62,14 +62,55 @@ function validateDeckCards(cardRows, providedCards) {
     return errors;
 }
 
+function parseChampionName(description) {
+    if (typeof description !== 'string') {
+        return null;
+    }
+
+    const championLine = description
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find((line) => line.startsWith('Champion:'));
+
+    return championLine ? championLine.slice('Champion:'.length).trim() || null : null;
+}
+
+function getDeckCardCount(deckCards = []) {
+    return deckCards.reduce((sum, row) => sum + (Number.isInteger(row.quantity) ? row.quantity : 0), 0);
+}
+
+function computeDeckLegality(deck) {
+    const championName = parseChampionName(deck.description);
+    const rows = (deck.cards || [])
+        .filter((row) => row?.card)
+        .map((row) => ({
+            quantity: row.quantity,
+            card: row.card,
+            isChampion: championName ? row.card.name === championName : false,
+        }));
+    const validationErrors = validateDeckCards(rows, deck.cards || []);
+    return {
+        isLegal: validationErrors.length === 0,
+        errors: validationErrors,
+    };
+}
+
+function decorateDeck(deck) {
+    if (!deck) return deck;
+    return {
+        ...deck,
+        cardCount: getDeckCardCount(deck.cards),
+        legality: computeDeckLegality(deck),
+    };
+}
+
 async function resolveDeckCardsAndValidate(cards, description) {
     const normalizedCards = normalizeCards(cards);
     if (!normalizedCards.length) {
         return { normalizedCards, validationErrors: ['Deck must contain at least one card'] };
     }
 
-    const championMatch = typeof description === 'string' ? description.match(/^Champion:\s*(.+)$/m) : null;
-    const championName = championMatch?.[1]?.trim() || null;
+    const championName = parseChampionName(description);
 
     const cardIds = normalizedCards.map((entry) => entry.cardId);
     const dbCards = await prisma.card.findMany({
@@ -98,9 +139,9 @@ async function resolveDeckCardsAndValidate(cards, description) {
     return { normalizedCards, validationErrors };
 }
 
-export async function createDeck(userId, name, description, cards = [], isPublic = false) {
+export async function createDeck(userId, name, description, cards = [], isPublic = false, allowInvalid = false) {
     const { normalizedCards, validationErrors } = await resolveDeckCardsAndValidate(cards, description);
-    if (validationErrors.length) {
+    if (validationErrors.length && !allowInvalid) {
         const error = new Error(validationErrors.join('; '));
         error.status = 400;
         throw error;
@@ -116,15 +157,17 @@ export async function createDeck(userId, name, description, cards = [], isPublic
             },
         });
 
-        await tx.deckCard.createMany({
-            data: normalizedCards.map((entry) => ({
-                deckId: newDeck.id,
-                cardId: entry.cardId,
-                quantity: entry.quantity,
-            })),
-        });
+        if (normalizedCards.length) {
+            await tx.deckCard.createMany({
+                data: normalizedCards.map((entry) => ({
+                    deckId: newDeck.id,
+                    cardId: entry.cardId,
+                    quantity: entry.quantity,
+                })),
+            });
+        }
 
-        return tx.deck.findUnique({
+        const createdDeck = await tx.deck.findUnique({
             where: { id: newDeck.id },
             include: {
                 owner: {
@@ -138,65 +181,70 @@ export async function createDeck(userId, name, description, cards = [], isPublic
                 },
             },
         });
+
+        return decorateDeck(createdDeck);
     });
 }
 
 export async function getDeckById(deckId) {
-
-    return prisma.deck.findUnique({
-
+    const deck = await prisma.deck.findUnique({
         where: {
-
             id: deckId
-
         },
-
         include: {
-
             owner: {
-
                 select: {
-
                     id: true,
-
                     username: true
-
                 }
-
             },
-
+            _count: {
+                select: { cards: true },
+            },
             cards: {
-
                 include: {
-
                     card: true
-
                 }
-
             }
-
         }
-
     });
-
+    return decorateDeck(deck);
 }
 
 export async function getDecksByUserId(userId) {
-    return prisma.deck.findMany({
+    const decks = await prisma.deck.findMany({
         where: { ownerId: userId },
         include: {
+            owner: {
+                select: {
+                    id: true,
+                    username: true,
+                },
+            },
             _count: {
                 select: { cards: true },
+            },
+            cards: {
+                include: {
+                    card: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,
+                        },
+                    },
+                },
             },
         },
         orderBy: {
             createdAt: 'desc',
         },
     });
+    return decks.map(decorateDeck);
 }
 
 export async function getCommunityDecks() {
-    return prisma.deck.findMany({
+    const decks = await prisma.deck.findMany({
         where: { isPublic: true },
         include: {
             owner: {
@@ -208,16 +256,28 @@ export async function getCommunityDecks() {
             _count: {
                 select: { cards: true },
             },
+            cards: {
+                include: {
+                    card: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,
+                        },
+                    },
+                },
+            },
         },
         orderBy: {
             createdAt: 'desc',
         },
     });
+    return decks.map(decorateDeck);
 }
 
-export async function updateDeck(deckId, name, description, cards = [], isPublic = false) {
+export async function updateDeck(deckId, name, description, cards = [], isPublic = false, allowInvalid = false) {
     const { normalizedCards, validationErrors } = await resolveDeckCardsAndValidate(cards, description);
-    if (validationErrors.length) {
+    if (validationErrors.length && !allowInvalid) {
         const error = new Error(validationErrors.join('; '));
         error.status = 400;
         throw error;
@@ -234,15 +294,17 @@ export async function updateDeck(deckId, name, description, cards = [], isPublic
         });
 
         await tx.deckCard.deleteMany({ where: { deckId } });
-        await tx.deckCard.createMany({
-            data: normalizedCards.map((entry) => ({
-                deckId,
-                cardId: entry.cardId,
-                quantity: entry.quantity,
-            })),
-        });
+        if (normalizedCards.length) {
+            await tx.deckCard.createMany({
+                data: normalizedCards.map((entry) => ({
+                    deckId,
+                    cardId: entry.cardId,
+                    quantity: entry.quantity,
+                })),
+            });
+        }
 
-        return tx.deck.findUnique({
+        const updatedDeck = await tx.deck.findUnique({
             where: { id: deckId },
             include: {
                 owner: {
@@ -256,19 +318,38 @@ export async function updateDeck(deckId, name, description, cards = [], isPublic
                 },
             },
         });
+        return decorateDeck(updatedDeck);
     });
 }
 
 export async function updateDeckVisibility(deckId, isPublic) {
-    return prisma.deck.update({
+    const deck = await prisma.deck.update({
         where: { id: deckId },
         data: { isPublic: Boolean(isPublic) },
         include: {
+            owner: {
+                select: {
+                    id: true,
+                    username: true,
+                },
+            },
             _count: {
                 select: { cards: true },
             },
+            cards: {
+                include: {
+                    card: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,
+                        },
+                    },
+                },
+            },
         },
     });
+    return decorateDeck(deck);
 }
 
 export async function copyDeck(sourceDeck, userId, newName) {
@@ -293,7 +374,7 @@ export async function copyDeck(sourceDeck, userId, newName) {
             });
         }
 
-        return tx.deck.findUnique({
+        const copiedDeck = await tx.deck.findUnique({
             where: { id: copied.id },
             include: {
                 owner: {
@@ -307,6 +388,7 @@ export async function copyDeck(sourceDeck, userId, newName) {
                 },
             },
         });
+        return decorateDeck(copiedDeck);
     });
 }
 

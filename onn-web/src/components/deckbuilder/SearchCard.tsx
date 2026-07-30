@@ -1,5 +1,4 @@
 import React, {KeyboardEvent, useState} from "react";
-import {Card, CardContent, Tooltip} from "@heroui/react";
 import {Check, Plus} from "lucide-react";
 
 import {CardOption} from "./types";
@@ -26,31 +25,11 @@ export function SearchCard({
     }
 
     return (
-        <Tooltip
-            content={
-                <div className="max-w-xs p-2">
-                    <p className="font-bold">{card.name}</p>
-                    <p className="text-sm text-default-400">{card.type}</p>
-                    {card.richText && (
-                        <div className="mt-2 text-xs" dangerouslySetInnerHTML={{__html: card.richText}}/>
-                    )}
-                    {card.domains && card.domains.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                            {card.domains.map((d, i) => (
-                                <span key={i} className="text-xs px-2 py-1 rounded bg-default-100 dark:bg-default-800">
-                                    {d.domain.name}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            }
-            placement="top"
-            delay={300}
+        <div
+            title={`${card.name} (${card.type})`}
+            className="h-full"
         >
-            <Card
-                isPressable
-                shadow="sm"
+            <div
                 className={`
                     h-full
                     overflow-hidden
@@ -65,7 +44,7 @@ export function SearchCard({
                 `}
                 role="button"
                 tabIndex={0}
-                onPress={() => onSelect(card)}
+                onClick={() => onSelect(card)}
                 onKeyDown={handleKeyDown}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
@@ -92,15 +71,15 @@ export function SearchCard({
                     </div>
                 </div>
 
-                <CardContent className="gap-1 p-3">
+                <div className="gap-1 p-3">
                     <h4 className="truncate text-sm font-semibold">
                         {card.name}
                     </h4>
                     <p className="text-xs text-default-500">
                         {card.type}
                     </p>
-                </CardContent>
-            </Card>
-        </Tooltip>
+                </div>
+            </div>
+        </div>
     );
 }

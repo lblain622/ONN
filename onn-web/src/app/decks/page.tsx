@@ -3,22 +3,16 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Chip,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Input,
-  Skeleton,
-  Tab,
-  Tabs,
-  Tooltip
+    Alert,
+    Badge,
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    Dropdown,
+    Input, Label,
+    Skeleton,
+    Tabs,
 } from "@heroui/react";
 import {
   Clock,
@@ -32,8 +26,6 @@ import {
   LogOut,
   Plus,
   Search,
-  SortAsc,
-  SortDesc,
   Trash2,
   Users
 } from "lucide-react";
@@ -53,6 +45,10 @@ type Deck = {
         username: string;
     };
     cardCount?: number;
+    legality?: {
+        isLegal: boolean;
+        errors?: string[];
+    };
     _count?: {
         cards: number;
     };
@@ -137,7 +133,7 @@ export default function DecksPage() {
     useEffect(() => {
         async function loadDecks() {
             try {
-                const response = await fetch(`${API_URL}/decks`, {
+                const response = await fetch(`${API_URL}/decks/my`, {
                     method: "GET",
                     credentials: "include",
                 });
@@ -187,7 +183,7 @@ export default function DecksPage() {
         const decksToFilter = activeTab === "my-decks" ? decks : communityDecks;
 
         // Filter
-        let filtered = decksToFilter.filter(deck =>
+        const filtered = decksToFilter.filter(deck =>
             deck.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (deck.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
             (deck.owner?.username?.toLowerCase() || "").includes(searchTerm.toLowerCase())
@@ -273,7 +269,7 @@ export default function DecksPage() {
         setError("");
 
         try {
-            const response = await fetch(`${API_URL}/decks/${deck.id}/visibility`, {
+            const response = await fetch(`${API_URL}/decks/${deck.id}/share`, {
                 method: "PATCH",
                 headers: {"Content-Type": "application/json"},
                 credentials: "include",
@@ -316,7 +312,8 @@ export default function DecksPage() {
         setSearchTerm("");
     };
 
-    const handleSortChange = (keys: any) => {
+    const handleSortChange = (keys: Set<React.Key> | "all") => {
+        if (keys === "all") return;
         const selected = Array.from(keys).pop() as SortOption;
         if (selected) setSortBy(selected);
     };
@@ -350,16 +347,7 @@ export default function DecksPage() {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                             <h2 className="text-xl font-semibold truncate">{deck.name}</h2>
-                            {isCommunity && (
-                                <Tooltip content="Public deck">
-                                    <Globe size={16} className="text-primary flex-shrink-0"/>
-                                </Tooltip>
-                            )}
-                            {!isCommunity && deck.isPublic && (
-                                <Tooltip content="Publicly shared">
-                                    <Globe size={16} className="text-gold flex-shrink-0"/>
-                                </Tooltip>
-                            )}
+                            {(isCommunity || deck.isPublic) && <Globe size={16} className="text-gold flex-shrink-0"/>}
                         </div>
                         <p className="mt-1 text-sm text-zinc-400 line-clamp-2">
                             {isCommunity
@@ -370,14 +358,10 @@ export default function DecksPage() {
                         </p>
                     </div>
 
-                    <Chip
-                        color={isCommunity ? "primary" : "secondary"}
-                        size="sm"
-                        variant="flat"
-                        startcontent={isCommunity ? <Users size={12}/> : <Lock size={12}/>}
-                    >
-                        {isCommunity ? "Public" : deck.format || "Standard"}
-                    </Chip>
+                    <div className="inline-flex items-center gap-1 rounded-full border border-gold/20 px-2 py-1 text-xs text-zinc-300">
+                        {isCommunity ? <Users size={12}/> : <Lock size={12}/>}
+                        <span>{isCommunity ? "Public" : deck.format || "Standard"}</span>
+                    </div>
                 </CardHeader>
 
                 <CardContent className="px-6 pb-6 pt-4">
@@ -390,11 +374,7 @@ export default function DecksPage() {
                             <span className="font-medium text-gold">Champion:</span>
                             <span className="truncate">{details.champion || "Not selected"}</span>
                         </p>
-                        {cardCount > 0 && (
-                            <p className="text-xs text-zinc-500">
-                                {cardCount} cards
-                            </p>
-                        )}
+                        {cardCount > 0 && <p className="text-xs text-zinc-500">{cardCount} cards</p>}
                     </div>
 
                     <div className="mt-5 flex items-center justify-between gap-3">
@@ -405,66 +385,38 @@ export default function DecksPage() {
 
                         {isCommunity ? (
                             <div className="flex gap-2">
-                                <Tooltip content="View this deck">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        isIconOnly
-                                        onPress={() => router.push(`/decks/${deck.id}`)}
-                                    >
-                                        <Eye size={16}/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Make your own copy">
-                                    <Button
-                                        size="sm"
-                                        color="primary"
-                                        isDisabled={isCopyingThis}
-                                        onPress={() => handleCopyDeck(deck)}
-                                        startcontent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
-                                            <Copy size={14}/>}
-                                    >
-                                        {isCopyingThis ? "Copying..." : "Copy"}
-                                    </Button>
-                                </Tooltip>
+                                <Button size="sm" variant="ghost" isIconOnly onPress={() => router.push(`/decks/${deck.id}`)}>
+                                    <Eye size={16}/>
+                                </Button>
+                                <Button size="sm" variant="primary" isDisabled={isCopyingThis} onPress={() => handleCopyDeck(deck)}>
+                                    {isCopyingThis ? <Loader2 size={14} className="animate-spin"/> : <Copy size={14}/>}
+                                    <span className="ml-1">{isCopyingThis ? "Copying..." : "Copy"}</span>
+                                </Button>
                             </div>
                         ) : (
                             <div className="flex gap-2">
-                                <Tooltip content="Edit deck">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        isIconOnly
-                                        onPress={() => router.push(`/decks/${deck.id}`)}
-                                    >
-                                        <Edit size={16}/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Delete deck">
-                                    <Button
-                                        size="sm"
-                                        color="danger"
-                                        variant="light"
-                                        isIconOnly
-                                        isLoading={isDeletingThis}
-                                        onPress={() => openDeleteModal(deck)}
-                                    >
-                                        <Trash2 size={16}/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content={deck.isPublic ? "Make private" : "Share publicly"}>
-                                    <Button
-                                        size="sm"
-                                        variant="flat"
-                                        color={deck.isPublic ? "success" : "default"}
-                                        isLoading={isUpdatingVisibilityThis}
-                                        onPress={() => handleToggleVisibility(deck)}
-                                        startcontent={!isUpdatingVisibilityThis && (deck.isPublic ? <Globe size={14}/> :
-                                            <Lock size={14}/>)}
-                                    >
-                                        {deck.isPublic ? "Public" : "Private"}
-                                    </Button>
-                                </Tooltip>
+                                <Button size="sm" variant="ghost" isIconOnly onPress={() => router.push(`/decks/${deck.id}`)}>
+                                    <Edit size={16}/>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="danger-soft"
+                                    isIconOnly
+                                    isDisabled={isDeletingThis}
+                                    onPress={() => openDeleteModal(deck)}
+                                >
+                                    {isDeletingThis ? <Loader2 size={14} className="animate-spin"/> : <Trash2 size={16}/>}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    isDisabled={isUpdatingVisibilityThis}
+                                    onPress={() => handleToggleVisibility(deck)}
+                                >
+                                    {isUpdatingVisibilityThis ? <Loader2 size={14} className="animate-spin"/> :
+                                        (deck.isPublic ? <Globe size={14}/> : <Lock size={14}/>)}
+                                    <span className="ml-1">{isUpdatingVisibilityThis ? "Saving..." : deck.isPublic ? "Public" : "Private"}</span>
+                                </Button>
                             </div>
                         )}
                     </div>
@@ -491,11 +443,11 @@ export default function DecksPage() {
                     </p>
                     {!isCommunity && (
                         <Button
-                            color="primary"
+                            variant="primary"
                             className="mt-6"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
                         >
+                            <Plus size={16}/>
                             Create Your First Deck
                         </Button>
                     )}
@@ -543,17 +495,24 @@ export default function DecksPage() {
 
                     <div className="flex flex-wrap gap-3">
                         <Button
-                            color="primary"
-                            onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
+                            variant="secondary"
+                            onPress={() => router.push("/matches")}
                         >
+                            <Users size={16}/>
+                            Lobbies
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onPress={() => router.push("/decks/new")}
+                        >
+                            <Plus size={16}/>
                             Create deck
                         </Button>
                         <Button
                             variant="ghost"
                             onPress={handleLogout}
-                            startcontent={<LogOut size={16}/>}
                         >
+                            <LogOut size={16}/>
                             Sign out
                         </Button>
                     </div>
@@ -564,93 +523,95 @@ export default function DecksPage() {
                     <Alert
                         color="danger"
                         title="Error"
-                        description={error || deleteError}
-                        onClose={() => {
-                            setError("");
-                            setDeleteError("");
-                        }}
-                    />
+                    >
+                        {error || deleteError}
+                    </Alert>
                 )}
 
                 {/* Search and Sort */}
                 <div className="flex flex-wrap gap-4 items-center">
+                    <Search
+                        size={16}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-default-400"
+                    />
+
                     <Input
-                        placeholder="Search decks..."
                         value={searchTerm}
                         onChange={handleSearch}
-                        startcontent={<Search size={16} className="text-zinc-400"/>}
-                        className="flex-1 min-w-[200px] max-w-md"
-                        size="sm"
-                        isClearable
-                        onClear={() => setSearchTerm("")}
+                        placeholder="Search decks..."
+                        className="pl-10 pr-10"
                     />
+
+                    {searchTerm && (
+                        <Button
+                            isIconOnly
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2"
+                            onPress={() => setSearchTerm("")}
+                        >
+                            ✕
+                        </Button>
+                    )}
 
                     <div className="flex gap-2">
                         <Dropdown>
-                            <DropdownTrigger>
-                                <Button
-                                    size="sm"
-                                    variant="flat"
-                                    startcontent={<Filter size={14}/>}
-                                >
-                                    Sort: {sortBy.replace("-", " ")}
-                                </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu
-                                aria-label="Sort options"
-                                selectionMode="single"
-                                selectedKeys={new Set([sortBy])}
-                                onSelectionChange={handleSortChange}
+                            <Button
+                                size="sm"
+                                variant="secondary"
                             >
-                                <DropdownItem key="newest" startcontent={<SortDesc size={14}/>}>
-                                    Newest first
-                                </DropdownItem>
-                                <DropdownItem key="oldest" startcontent={<SortAsc size={14}/>}>
-                                    Oldest first
-                                </DropdownItem>
-                                <DropdownItem key="name-asc" startcontent={<SortAsc size={14}/>}>
-                                    Name (A-Z)
-                                </DropdownItem>
-                                <DropdownItem key="name-desc" startcontent={<SortDesc size={14}/>}>
-                                    Name (Z-A)
-                                </DropdownItem>
-                            </DropdownMenu>
+                                <Filter size={14} />
+                                Sort: {sortBy.replace("-", " ")}
+                            </Button>
+
+                            <Dropdown.Popover>
+                                <Dropdown.Menu
+                                    selectionMode="single"
+                                    selectedKeys={new Set([sortBy])}
+                                    onSelectionChange={handleSortChange}
+                                >
+                                    <Dropdown.Item id="newest" textValue="Newest first">
+                                        <Label>Newest first</Label>
+                                    </Dropdown.Item>
+
+                                    <Dropdown.Item id="oldest" textValue="Oldest first">
+                                        <Label>Oldest first</Label>
+                                    </Dropdown.Item>
+
+                                    <Dropdown.Item id="name-asc" textValue="Name (A-Z)">
+                                        <Label>Name (A-Z)</Label>
+                                    </Dropdown.Item>
+
+                                    <Dropdown.Item id="name-desc" textValue="Name (Z-A)">
+                                        <Label>Name (Z-A)</Label>
+                                    </Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown.Popover>
                         </Dropdown>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <Tabs
-                    aria-label="Deck categories"
-                    selectedKey={activeTab}
-                    onSelectionChange={handleTabChange}
-                    color="primary"
-                    variant="underlined"
-                    size="lg"
-                >
-                    <Tab
-                        key="my-decks"
-                        title={
-                            <div className="flex items-center gap-2">
+
+                    <Tabs
+                        selectedKey={activeTab}
+                        onSelectionChange={handleTabChange}
+                    >
+                        <Tabs.List>
+                            <Tabs.Tab id="my-decks">
                                 <span>My Decks</span>
-                                <Badge color="primary" size="sm">
-                                    {decks.length}
-                                </Badge>
-                            </div>
-                        }
-                    />
-                    <Tab
-                        key="community"
-                        title={
-                            <div className="flex items-center gap-2">
+                                <Badge>{decks.length}</Badge>
+                            </Tabs.Tab>
+
+                            <Tabs.Tab id="community">
                                 <span>Community</span>
-                                <Badge color="secondary" size="sm">
-                                    {communityDecks.length}
-                                </Badge>
-                            </div>
-                        }
-                    />
-                </Tabs>
+                                <Badge>{communityDecks.length}</Badge>
+                            </Tabs.Tab>
+                        </Tabs.List>
+
+                        <Tabs.Panel id="my-decks"> </Tabs.Panel>
+                        <Tabs.Panel id="community"> </Tabs.Panel>
+                    </Tabs>
 
                 {/* Deck Content */}
                 {activeTab === "my-decks" ? (
@@ -697,23 +658,25 @@ export default function DecksPage() {
                                 <CardContent className="px-6 py-4">
                                     <p className="text-zinc-300">
                                         Are you sure you want to delete <span
-                                        className="font-semibold text-white">"{deckToDelete.name}"</span>?
+                                        className="font-semibold text-white">&quot;{deckToDelete.name}&quot;</span>?
                                         All cards and data associated with this deck will be permanently removed.
                                     </p>
                                     {deleteError && (
-                                        <Alert color="danger" title="Error" description={deleteError} className="mt-4"/>
+                                        <Alert color="danger" title="Error" className="mt-4">
+                                            {deleteError}
+                                        </Alert>
                                     )}
                                 </CardContent>
                                 <div className="flex gap-3 px-6 pb-6 pt-2 justify-end">
-                                    <Button variant="flat" onPress={closeDeleteModal}>
+                                    <Button variant="secondary" onPress={closeDeleteModal}>
                                         Cancel
                                     </Button>
                                     <Button
-                                        color="danger"
-                                        isLoading={isDeleting === deckToDelete.id}
+                                        variant="danger"
+                                        isDisabled={isDeleting === deckToDelete.id}
                                         onPress={handleDeleteDeck}
-                                        startcontent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
                                     >
+                                        {isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
                                         {isDeleting === deckToDelete.id ? "Deleting..." : "Delete Deck"}
                                     </Button>
                                 </div>
@@ -728,7 +691,7 @@ export default function DecksPage() {
                         {activeTab === "my-decks"
                             ? `${filteredAndSortedDecks.length} of ${decks.length} decks shown`
                             : `${filteredAndSortedDecks.length} of ${communityDecks.length} community decks shown`}
-                        {searchTerm && ` (filtered by "${searchTerm}")`}
+                        {searchTerm && ` (filtered by ${searchTerm})`}
                     </p>
                 </div>
             </div>

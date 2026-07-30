@@ -1,6 +1,4 @@
-import React, {useCallback, useEffect, useState} from "react";
-import {Button, Input, Modal, ModalBody, ModalContainer, ModalFooter, ModalHeader, Spinner,} from "@heroui/react";
-
+import React, {useCallback, useState} from "react";
 import {BuilderState, CardOption} from "./types";
 import {SearchCard} from "./SearchCard";
 
@@ -34,198 +32,94 @@ export function SearchModal({
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
 
-    // Reset state when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            setQuery("");
-            setCardType("all");
-            setSearchError(null);
-        }
-    }, [isOpen]);
-
     const handleSearch = useCallback(async () => {
         if (!query.trim()) {
             return;
         }
-
-        setIsSearching(true);
         setSearchError(null);
-
+        setIsSearching(true);
         try {
-            await onSearch(targetSection, query, cardType);
+            await onSearch(targetSection, query.trim(), cardType);
         } catch (error) {
             setSearchError(error instanceof Error ? error.message : "Search failed");
         } finally {
             setIsSearching(false);
         }
-    }, [query, cardType, targetSection, onSearch]);
-
-    const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            handleSearch();
-        }
-    }, [handleSearch]);
+    }, [cardType, onSearch, query, targetSection]);
 
     const handleSelect = useCallback((card: CardOption) => {
         onSelect(targetSection, card);
         onOpenChange(false);
-    }, [targetSection, onSelect, onOpenChange]);
+    }, [onOpenChange, onSelect, targetSection]);
 
-    const getSectionTitle = (section: keyof BuilderState): string => {
-        const titles: Record<keyof BuilderState, string> = {
-            legend: "Legend",
-            champion: "Champion",
-            mainDeck: "Main Deck",
-            runes: "Runes",
-            battlefields: "Battlefields",
-        };
-        return titles[section] || String(section);
-    };
+    if (!isOpen) {
+        return null;
+    }
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            size="4xl"
-            placement="center"
-            scrollBehavior="inside"
-            backdrop="blur"
-        >
-            <ModalContainer>
-                {(onClose) => (
-                    <>
-                        <ModalHeader className="flex flex-col gap-1">
-                            <h2 className="text-xl font-semibold">
-                                Search {getSectionTitle(targetSection)}
-                            </h2>
-                            <p className="text-sm text-default-500">
-                                Find and add cards to your deck.
-                            </p>
-                        </ModalHeader>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+            <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-xl border border-gold/20 bg-darkblue p-4">
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">Search Cards</h2>
+                    <button type="button" onClick={() => onOpenChange(false)} className="text-sm text-zinc-400 hover:text-white">
+                        Close
+                    </button>
+                </div>
 
-                        <ModalBody>
-                            {/* Search Input */}
-                            <div className="flex gap-2 mb-4">
-                                <Input
-                                    placeholder="Search for cards..."
-                                    value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    className="flex-1"
-                                    startcontent={
-                                        <svg
-                                            className="w-4 h-4 text-default-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                            />
-                                        </svg>
-                                    }
-                                    endContent={
-                                        query && !isSearching && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setQuery("")}
-                                                className="text-default-400 hover:text-default-600 transition-colors"
-                                                aria-label="Clear search"
-                                            >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M6 18L18 6M6 6l12 12"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        )
-                                    }
-                                />
-                                <Button
-                                    color="primary"
-                                    onPress={handleSearch}
-                                    isLoading={isSearching}
-                                    disabled={!query.trim() || isSearching}
-                                >
-                                    Search
-                                </Button>
-                            </div>
+                <div className="mb-3 flex gap-2">
+                    <input
+                        placeholder="Search for cards..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                void handleSearch();
+                            }
+                        }}
+                        className="h-10 flex-1 rounded-lg border border-gold/20 bg-black px-3 text-sm outline-none"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => void handleSearch()}
+                        disabled={!query.trim() || isSearching}
+                        className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-darkblue disabled:opacity-50"
+                    >
+                        {isSearching ? "Searching..." : "Search"}
+                    </button>
+                </div>
 
-                            {/* Card Type Filter */}
-                            <div className="flex gap-2 mb-4 flex-wrap">
-                                {["all", "unit", "spell", "artifact", "land", "rune", "battlefield"].map((type) => (
-                                    <Button
-                                        key={type}
-                                        size="sm"
-                                        variant={cardType === type ? "solid" : "flat"}
-                                        color={cardType === type ? "primary" : "default"}
-                                        onPress={() => setCardType(type)}
-                                    >
-                                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                                    </Button>
-                                ))}
-                            </div>
+                <div className="mb-4 flex flex-wrap gap-2">
+                    {["all", "unit", "spell", "artifact", "land", "rune", "battlefield"].map((type) => (
+                        <button
+                            key={type}
+                            type="button"
+                            onClick={() => setCardType(type)}
+                            className={`rounded-md px-2.5 py-1 text-xs uppercase ${
+                                cardType === type ? "bg-gold/20 text-gold" : "bg-black text-zinc-400"
+                            }`}
+                        >
+                            {type}
+                        </button>
+                    ))}
+                </div>
 
-                            {/* Error Message */}
-                            {searchError && (
-                                <div
-                                    className="mb-4 p-3 rounded-lg bg-danger-50 dark:bg-danger-950/50 text-danger-600 dark:text-danger-400 text-sm">
-                                    ⚠️ {searchError}
-                                </div>
-                            )}
-
-                            {/* Search Results */}
-                            {isSearching ? (
-                                <div className="flex justify-center items-center py-12">
-                                    <Spinner size="lg" label="Searching..."/>
-                                </div>
-                            ) : section?.searchResults?.length > 0 ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                    {section.searchResults.map((card: CardOption) => (
-                                        <SearchCard
-                                            key={card.id}
-                                            card={card}
-                                            onSelect={() => handleSelect(card)}
-                                            isSelected={section.selectedCards?.some(c => c.id === card.id)}
-                                        />
-                                    ))}
-                                </div>
-                            ) : query && !isSearching ? (
-                                <div className="text-center py-12 text-default-500">
-                                    <div className="text-4xl mb-3">🔍</div>
-                                    <p>No cards found. Try a different search term.</p>
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-default-400">
-                                    <div className="text-4xl mb-3">🃏</div>
-                                    <p>Enter a search term to find cards.</p>
-                                </div>
-                            )}
-                        </ModalBody>
-
-                        <ModalFooter>
-                            <Button
-                                variant="flat"
-                                color="default"
-                                onPress={onClose}
-                            >
-                                Close
-                            </Button>
-                        </ModalFooter>
-                    </>
+                {searchError && (
+                    <p className="mb-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+                        {searchError}
+                    </p>
                 )}
-            </ModalContainer>
-        </Modal>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                    {section.searchResults.map((card) => (
+                        <SearchCard
+                            key={card.id}
+                            card={card}
+                            onSelect={() => handleSelect(card)}
+                            isSelected={section.selectedCards.some((selected) => selected.id === card.id)}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }

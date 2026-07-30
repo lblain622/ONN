@@ -140,28 +140,30 @@ export function useDeckBuilder(deckId: string) {
     }, []);
 
     const handleSearch = useCallback(async (sectionKey: keyof BuilderState, query: string, cardType: string) => {
-        try {
-            const typeParam = cardType === "all" ? builder[sectionKey].type : cardType.toUpperCase();
-            const response = await fetch(`${API_URL}/cards/search?query=${encodeURIComponent(query)}&type=${typeParam}`, {
-                credentials: "include",
-            });
+        const normalizedType = cardType === "all" ? builder[sectionKey].type : cardType.toUpperCase();
+        const typeParam = normalizedType === "ARTIFACT" ? "GEAR" : normalizedType;
+        const params = new URLSearchParams({
+            query: query.trim(),
+            type: typeParam,
+        });
 
-            if (!response.ok) throw new Error("Search failed");
-            const results = await response.json();
+        const response = await fetch(`${API_URL}/cards/search?${params.toString()}`, {
+            credentials: "include",
+        });
 
-            setBuilder(prev => ({
-                ...prev,
-                [sectionKey]: {
-                    ...prev[sectionKey],
-                    searchResults: results
-                }
-            }));
-        } catch (error) {
-            throw error;
-        }
+        if (!response.ok) throw new Error("Search failed");
+        const results = await response.json();
+
+        setBuilder(prev => ({
+            ...prev,
+            [sectionKey]: {
+                ...prev[sectionKey],
+                searchResults: results
+            }
+        }));
     }, [builder]);
 
-    const handleSave = useCallback(async () => {
+    const handleSave = useCallback(async (options?: { allowInvalid?: boolean }) => {
         setIsSaving(true);
         setError(null);
 
@@ -201,6 +203,7 @@ export function useDeckBuilder(deckId: string) {
                     description,
                     cards: allCards,
                     isPublic,
+                    allowInvalid: Boolean(options?.allowInvalid),
                 }),
             });
 

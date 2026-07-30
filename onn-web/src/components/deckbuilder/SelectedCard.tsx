@@ -1,5 +1,4 @@
-import React, {useState} from "react";
-import {Button, Card, Tooltip} from "@heroui/react";
+import React from "react";
 import {X} from "lucide-react";
 import {CardOption} from "./types";
 import {CardImage} from "./CardImage";
@@ -7,97 +6,69 @@ import {CardImage} from "./CardImage";
 type SelectedCardProps = {
     card: CardOption;
     onRemove?: (cardId: string) => void;
-    selectedLabel?: string;
     readOnly?: boolean;
     className?: string;
+    count?: number;
 };
 
 export function SelectedCard({
                                  card,
                                  onRemove,
-                                 selectedLabel,
                                  readOnly = false,
-                                 className = ""
+                                 className = "",
+                                 count = 1,
                              }: SelectedCardProps) {
-    const [isHovered, setIsHovered] = useState(false);
-
     const handleRemove = (e: React.MouseEvent) => {
         e.stopPropagation();
         onRemove?.(card.id);
     };
 
     return (
-        <Card
-            className={`
-                overflow-hidden 
-                border border-gold/20 
-                bg-black 
-                shadow-sm 
-                transition-all 
-                duration-200
-                ${!readOnly && isHovered ? "border-primary shadow-lg" : ""}
-                ${className}
-            `}
-            isPressable={!readOnly}
-            onPress={!readOnly ? () => onRemove?.(card.id) : undefined}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <div className="relative">
-                <CardImage card={card} size={selectedLabel ? "selected" : "compact"}/>
-
-                {selectedLabel && (
-                    <div className="absolute top-2 left-2">
-                        <span
-                            className="px-2 py-1 text-xs font-semibold text-gold bg-darkblue/90 backdrop-blur-sm rounded-md border border-gold/20">
-                            {selectedLabel}
-                        </span>
-                    </div>
-                )}
-
-                {!readOnly && onRemove && isHovered && (
-                    <div
-                        className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-200">
-                        <Button
-                            isIconOnly
-                            color="danger"
-                            size="lg"
-                            onPress={handleRemove}
-                            className="transform transition-transform hover:scale-110"
-                        >
-                            <X size={24}/>
-                        </Button>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                <div className="min-w-0 flex-1">
-                    <Tooltip content={card.name}>
-                        <p className="truncate font-medium text-white">
-                            {card.name}
-                        </p>
-                    </Tooltip>
-                    {card.type && (
-                        <p className="truncate text-xs text-zinc-400">
-                            {card.type}
-                        </p>
+        <div className={`group relative ${className}`}>
+            <div className="flex h-14 items-center gap-3 rounded-lg border border-gold/20 bg-black px-2.5">
+                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md border border-gold/20 bg-darkblue">
+                    {card.imageUrl ? (
+                        <img
+                            src={card.imageUrl}
+                            alt={card.name}
+                            loading="lazy"
+                            decoding="async"
+                            draggable={false}
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">🃏</div>
                     )}
                 </div>
 
-                {!readOnly && onRemove && !isHovered && (
-                    <Button
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        onPress={handleRemove}
-                        className="shrink-0 min-w-0 px-2 opacity-60 hover:opacity-100"
+                <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white" title={card.name}>
+                        {card.name}
+                    </p>
+                    <p className="truncate text-xs text-zinc-400">{card.type}</p>
+                </div>
+
+                {count > 1 && (
+                    <span className="rounded-md border border-gold/20 px-2 py-0.5 text-xs text-zinc-200">{count}x</span>
+                )}
+
+                {!readOnly && onRemove && (
+                    <button
+                        type="button"
+                        onClick={handleRemove}
+                        className="rounded border border-danger/40 px-2 py-1 text-xs text-danger hover:bg-danger/10"
                         aria-label={`Remove ${card.name}`}
                     >
-                        ✕
-                    </Button>
+                        <X size={14}/>
+                    </button>
                 )}
             </div>
-        </Card>
+
+            <div className="pointer-events-none absolute left-0 top-full z-30 mt-2 hidden w-56 group-hover:block">
+                <div className="rounded-xl border border-gold/20 bg-black p-2 shadow-2xl">
+                    <CardImage card={card} size="selected"/>
+                </div>
+            </div>
+        </div>
     );
 }

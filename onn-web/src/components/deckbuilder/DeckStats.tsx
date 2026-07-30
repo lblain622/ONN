@@ -1,6 +1,5 @@
 // components/deckbuilder/DeckStats.tsx
 import React, {useMemo} from "react";
-import {Card, CardContent, ProgressBar} from "@heroui/react";
 import {BuilderState} from "./types";
 
 type DeckStatsProps = {
@@ -42,12 +41,19 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
         if (current === target) return "success";
         if (current > target) return "danger";
         if (current / target >= 0.8) return "warning";
-        return "primary";
+        return "default";
+    };
+
+    const getProgressClass = (color: string) => {
+        if (color === "success") return "bg-success";
+        if (color === "danger") return "bg-danger";
+        if (color === "warning") return "bg-warning";
+        return "bg-gold/70";
     };
 
     return (
-        <Card className={`border border-gold/20 bg-black ${className}`}>
-            <CardContent className="space-y-4">
+        <div className={`rounded-xl border border-gold/20 bg-black p-4 ${className}`}>
+            <div className="space-y-4">
                 <div>
                     <h4 className="text-sm font-semibold text-gold">Deck Statistics</h4>
                     <p className="text-xs text-zinc-400">Overview of your deck composition</p>
@@ -62,12 +68,12 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                                 {stats.mainDeckCount}/40
                             </span>
                         </div>
-                        <ProgressBar
-                            size="sm"
-                            value={Math.min((stats.mainDeckCount / 40) * 100, 100)}
-                            color={getProgressColor(stats.mainDeckCount, 40)}
-                            className="mt-1"
-                        />
+                        <div className="mt-1 h-2 rounded-full bg-gold/10">
+                            <div
+                                className={`h-2 rounded-full transition-all ${getProgressClass(getProgressColor(stats.mainDeckCount, 40))}`}
+                                style={{width: `${Math.min((stats.mainDeckCount / 40) * 100, 100)}%`}}
+                            />
+                        </div>
                     </div>
 
                     {/* Runes Progress */}
@@ -78,12 +84,12 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                                 {stats.runeCount}/12
                             </span>
                         </div>
-                        <ProgressBar
-                            size="sm"
-                            value={Math.min((stats.runeCount / 12) * 100, 100)}
-                            color={getProgressColor(stats.runeCount, 12)}
-                            className="mt-1"
-                        />
+                        <div className="mt-1 h-2 rounded-full bg-gold/10">
+                            <div
+                                className={`h-2 rounded-full transition-all ${getProgressClass(getProgressColor(stats.runeCount, 12))}`}
+                                style={{width: `${Math.min((stats.runeCount / 12) * 100, 100)}%`}}
+                            />
+                        </div>
                     </div>
 
                     {/* Battlefields Progress */}
@@ -94,12 +100,12 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                                 {stats.battlefieldCount}/3
                             </span>
                         </div>
-                        <ProgressBar
-                            size="sm"
-                            value={Math.min((stats.battlefieldCount / 3) * 100, 100)}
-                            color={getProgressColor(stats.battlefieldCount, 3)}
-                            className="mt-1"
-                        />
+                        <div className="mt-1 h-2 rounded-full bg-gold/10">
+                            <div
+                                className={`h-2 rounded-full transition-all ${getProgressClass(getProgressColor(stats.battlefieldCount, 3))}`}
+                                style={{width: `${Math.min((stats.battlefieldCount / 3) * 100, 100)}%`}}
+                            />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gold/10">
@@ -129,7 +135,7 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                         </div>
                     )}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

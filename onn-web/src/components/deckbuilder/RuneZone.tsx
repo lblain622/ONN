@@ -1,5 +1,5 @@
 import React from "react";
-import {Badge, Button} from "@heroui/react";
+import {Badge} from "@heroui/react";
 import {Sparkles} from "lucide-react";
 
 import {SelectedCard} from "./SelectedCard";
@@ -51,14 +51,13 @@ export function RuneZone({
                 </div>
 
                 {!isReadOnly && cards.length < maxRunes && (
-                    <Button
-                        size="sm"
-                        variant="flat"
-                        color="primary"
-                        onPress={onOpenSearch}
+                    <button
+                        type="button"
+                        onClick={onOpenSearch}
+                        className="rounded-md border border-gold/20 px-3 py-1.5 text-sm text-zinc-300 hover:text-gold"
                     >
                         Add Rune
-                    </Button>
+                    </button>
                 )}
             </div>
 
