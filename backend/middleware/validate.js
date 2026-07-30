@@ -41,6 +41,12 @@ export const registerSchema = z.object({
         .string({ required_error: 'Password is required' })
         .min(8, 'Password must be at least 8 characters')
         .max(128, 'Password must be at most 128 characters'),
+    displayName: z
+        .string()
+        .trim()
+        .max(100, 'Display name must be at most 100 characters')
+        .optional()
+        .nullable(),
 });
 
 // ── Decks ─────────────────────────────────────────────────────────────────────

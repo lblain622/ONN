@@ -199,7 +199,7 @@ export async function searchCards(query, cardType = null) {
 
     return cards.map(card => ({
         ...card,
-        domains: card?.domains.map(d => d.domain.name),
-        tags: card?.tags.map(t => t.tag.name),
+        domains: card?.domains?.map(d => d?.domain?.name).filter(Boolean) ?? [],
+        tags: card?.tags?.map(t => t?.tag?.name).filter(Boolean) ?? [],
     }));
 }

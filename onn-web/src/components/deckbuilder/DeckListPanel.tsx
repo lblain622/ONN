@@ -174,6 +174,7 @@ export function DeckListPanel({builder, isReadOnly,onRemove, onAddCopy}:DeckPane
                         onRemove("runes", card.id)
                     }
                 />
+
             ))}
 
           </CardBody>

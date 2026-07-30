@@ -17,7 +17,14 @@ export function SearchCard({
                                isSelected = false,
                            }: SearchCardProps) {
     const [isHovered, setIsHovered] = useState(false);
-    console.log(card)
+
+    function getDomainLabel(domain: CardOption["domains"][number]) {
+        if (typeof domain === "string") {
+            return domain;
+        }
+
+        return domain?.domain?.name ?? domain?.name ?? "";
+    }
 
     function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
         if (event.key === "Enter" || event.key === " ") {
@@ -37,11 +44,14 @@ export function SearchCard({
                     )}
                     {card.domains && card.domains.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
-                            {card.domains.map((d, i) => (
-                                <span key={i} className="text-xs px-2 py-1 rounded bg-default-100 dark:bg-default-800">
-                                    {d.domain.name}
-                                </span>
-                            ))}
+                            {card.domains
+                                .map(getDomainLabel)
+                                .filter(Boolean)
+                                .map((label, i) => (
+                                    <span key={i} className="text-xs px-2 py-1 rounded bg-default-100 dark:bg-default-800">
+                                        {label}
+                                    </span>
+                                ))}
                         </div>
                     )}
                 </div>

@@ -28,28 +28,28 @@ router.post('/login', authLimiter, validate(loginSchema), asyncHandler(async (re
     const { email, password } = req.body;
     const user = await authService.authenticateUser(email, password);
     const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
+        { userId: user.id, email: user.email, role: user.role, displayName: user.displayName },
         JWT_SECRET,
         { expiresIn: '30d' }
     );
     setSessionCookie(res, token);
-    res.status(200).json({ id: user.id, email: user.email, role: user.role });
+    res.status(200).json({ id: user.id, email: user.email, role: user.role, displayName: user.displayName });
 }));
 
 router.post('/register', authLimiter, validate(registerSchema), asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    const newUser = await authService.registerUser(email, password);
+    const { email, password, displayName } = req.body;
+    const newUser = await authService.registerUser(email, password, displayName);
     const token = jwt.sign(
-        { userId: newUser.id, email: newUser.email, role: newUser.role },
+        { userId: newUser.id, email: newUser.email, role: newUser.role, displayName: newUser.displayName },
         JWT_SECRET,
         { expiresIn: '30d' }
     );
     setSessionCookie(res, token);
-    res.status(201).json({ id: newUser.id, email: newUser.email, role: newUser.role });
+    res.status(201).json({ id: newUser.id, email: newUser.email, role: newUser.role, displayName: newUser.displayName });
 }));
 
 router.get('/me', auth, asyncHandler(async (req, res) => {
-    res.json({ id: req.user.userId, email: req.user.email, role: req.user.role });
+    res.json({ id: req.user.userId, email: req.user.email, role: req.user.role, displayName: req.user.displayName });
 }));
 
 router.post('/logout', asyncHandler(async (req, res) => {

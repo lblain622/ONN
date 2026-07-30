@@ -14,6 +14,7 @@ type PasswordStrength = {
 
 export default function Home() {
     const [email, setEmail] = useState("");
+    const [displayName, setDisplayName] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isRegistering, setIsRegistering] = useState(false);
@@ -60,6 +61,11 @@ export default function Home() {
 
     // Calculate password strength
     useEffect(() => {
+        if (!isRegistering) {
+            setPasswordStrength({score: 0, label: "", color: "bg-transparent"});
+            return;
+        }
+
         if (!password) {
             setPasswordStrength({score: 0, label: "Weak", color: "bg-red-500"});
             return;
@@ -90,7 +96,7 @@ export default function Home() {
     };
 
     const validatePassword = (password: string) => {
-        return password.length >= 8;
+        return isRegistering ? password.length >= 8 : password.length >= 1;
     };
 
     const validateConfirmPassword = (confirmPassword: string) => {
@@ -144,7 +150,11 @@ export default function Home() {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify({email, password}),
+                body: JSON.stringify({
+                    email,
+                    password,
+                    ...(isRegistering && {displayName: displayName.trim() || undefined}),
+                }),
             });
 
             const data = await response.json().catch(() => ({}));
@@ -172,6 +182,7 @@ export default function Home() {
         setIsRegistering(!isRegistering);
         setError("");
         setSuccess("");
+        setDisplayName("");
         setPassword("");
         setConfirmPassword("");
         setTouched({email: false, password: false, confirmPassword: false});
@@ -247,6 +258,25 @@ export default function Home() {
                             )}
                         </div>
 
+                        {isRegistering && (
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-300">
+                                    Display Name <span className="text-zinc-500">(optional)</span>
+                                </label>
+                                <div className="relative mt-1">
+                                    <input
+                                        type="text"
+                                        value={displayName}
+                                        onChange={(e) => setDisplayName(e.target.value)}
+                                        placeholder="Your public name"
+                                        className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-white outline-none ring-0 transition-all focus:border-gold"
+                                        maxLength={100}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         {/* Password Field */}
                         <div>
                             <label className="block text-sm font-medium text-zinc-300">
@@ -274,7 +304,7 @@ export default function Home() {
                                     `}
                                     required
                                     disabled={isSubmitting}
-                                    minLength={8}
+                                    minLength={isRegistering ? 8 : undefined}
                                 />
                                 <button
                                     type="button"
@@ -287,7 +317,7 @@ export default function Home() {
                             </div>
 
                             {/* Password Strength Indicator */}
-                            {password && touched.password && (
+                            {isRegistering && password && touched.password && (
                                 <div className="mt-2 space-y-1">
                                     <div className="flex items-center gap-2">
                                         <div className="flex-1 h-1.5 bg-zinc-700 rounded-full overflow-hidden">

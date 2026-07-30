@@ -1,4 +1,4 @@
-import { Button, Chip } from "@heroui/react";
+import {Button, Chip, Tooltip,Image} from "@heroui/react";
 import { X } from "lucide-react";
 
 import { CardOption } from "./types";
@@ -71,6 +71,14 @@ export function DeckRow({
 
                 </div>
             )}
+            <Tooltip
+                content={
+                    <Image
+                        src={card.imageUrl}
+                        className="w-72"
+                    />
+                }
+            />
         </div>
     );
 }

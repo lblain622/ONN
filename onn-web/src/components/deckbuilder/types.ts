@@ -5,7 +5,7 @@ export type CardOption = {
     type: string;
     imageUrl?: string;
     richText?: string;
-    domains: string[];
+    domains: Array<string | { name?: string; domain?: { name?: string } }>;
     tags?: string[];
 };
 

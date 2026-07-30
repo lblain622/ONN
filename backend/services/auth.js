@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma.js';
 import bcrypt from 'bcrypt';
 
-export async function registerUser(email, password) {
+export async function registerUser(email, password, displayName = null) {
     if (!email || !password) {
         throw new Error('Email and password are required');
     }
@@ -14,6 +14,7 @@ export async function registerUser(email, password) {
         data: {
             email,
             username: email,
+            displayName: typeof displayName === 'string' ? displayName.trim() || null : null,
             passwordHash: await bcrypt.hash(password, 12)
         }
     });

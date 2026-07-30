@@ -199,7 +199,7 @@ describe('GET /cards/search', () => {
             .set('Authorization', `Bearer ${makeToken()}`);
 
         expect(res.status).toBe(200);
-        expect(res.body).toEqual([{ id: 'card_1', name: 'Fire Bolt', type: 'SPELL' }]);
+        expect(res.body).toEqual([{ id: 'card_1', name: 'Fire Bolt', type: 'SPELL', domains: [], tags: [] }]);
     });
 
     it('returns 400 for invalid card type', async () => {
