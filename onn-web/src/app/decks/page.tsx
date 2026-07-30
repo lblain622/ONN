@@ -3,22 +3,22 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Chip,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Input,
-  Skeleton,
-  Tab,
-  Tabs,
-  Tooltip
+    Alert,
+    Badge,
+    Button,
+    Card,
+    CardContent,
+    CardHeader,
+    Chip,
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownTrigger,
+    Input, Label,
+    Skeleton,
+    Tab,
+    Tabs,
+    Tooltip
 } from "@heroui/react";
 import {
   Clock,
@@ -590,83 +590,93 @@ export default function DecksPage() {
 
                 {/* Search and Sort */}
                 <div className="flex flex-wrap gap-4 items-center">
+                    <Search
+                        size={16}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-default-400"
+                    />
+
                     <Input
-                        placeholder="Search decks..."
                         value={searchTerm}
                         onChange={handleSearch}
-                        startcontent={<Search size={16} className="text-zinc-400"/>}
-                        className="flex-1 min-w-[200px] max-w-md"
-                        size="sm"
-                        isClearable
-                        onClear={() => setSearchTerm("")}
+                        placeholder="Search decks..."
+                        className="pl-10 pr-10"
                     />
+
+                    {searchTerm && (
+                        <Button
+                            isIconOnly
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2"
+                            onPress={() => setSearchTerm("")}
+                        >
+                            ✕
+                        </Button>
+                    )}
 
                     <div className="flex gap-2">
                         <Dropdown>
-                            <DropdownTrigger>
-                                <Button
-                                    size="sm"
-                                    variant="flat"
-                                    startcontent={<Filter size={14}/>}
-                                >
-                                    Sort: {sortBy.replace("-", " ")}
-                                </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu
-                                aria-label="Sort options"
-                                selectionMode="single"
-                                selectedKeys={new Set([sortBy])}
-                                onSelectionChange={handleSortChange}
+                            <Button
+                                size="sm"
+                                variant="flat"
+                                startContent={<Filter size={14} />}
                             >
-                                <DropdownItem key="newest" startcontent={<SortDesc size={14}/>}>
-                                    Newest first
-                                </DropdownItem>
-                                <DropdownItem key="oldest" startcontent={<SortAsc size={14}/>}>
-                                    Oldest first
-                                </DropdownItem>
-                                <DropdownItem key="name-asc" startcontent={<SortAsc size={14}/>}>
-                                    Name (A-Z)
-                                </DropdownItem>
-                                <DropdownItem key="name-desc" startcontent={<SortDesc size={14}/>}>
-                                    Name (Z-A)
-                                </DropdownItem>
-                            </DropdownMenu>
+                                Sort: {sortBy.replace("-", " ")}
+                            </Button>
+
+                            <Dropdown.Popover>
+                                <Dropdown.Menu
+                                    selectionMode="single"
+                                    selectedKeys={new Set([sortBy])}
+                                    onSelectionChange={handleSortChange}
+                                >
+                                    <Dropdown.Item id="newest" textValue="Newest first">
+                                        <Label>Newest first</Label>
+                                    </Dropdown.Item>
+
+                                    <Dropdown.Item id="oldest" textValue="Oldest first">
+                                        <Label>Oldest first</Label>
+                                    </Dropdown.Item>
+
+                                    <Dropdown.Item id="name-asc" textValue="Name (A-Z)">
+                                        <Label>Name (A-Z)</Label>
+                                    </Dropdown.Item>
+
+                                    <Dropdown.Item id="name-desc" textValue="Name (Z-A)">
+                                        <Label>Name (Z-A)</Label>
+                                    </Dropdown.Item>
+                                </Dropdown.Menu>
+                            </Dropdown.Popover>
                         </Dropdown>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <Tabs
-                    aria-label="Deck categories"
-                    selectedKey={activeTab}
-                    onSelectionChange={handleTabChange}
-                    color="primary"
-                    variant="underlined"
-                    size="lg"
-                >
-                    <Tab
-                        key="my-decks"
-                        title={
-                            <div className="flex items-center gap-2">
+
+                    <Tabs
+                        selectedKey={activeTab}
+                        onSelectionChange={handleTabChange}
+                    >
+                        <Tabs.List>
+                            <Tabs.Tab id="my-decks">
                                 <span>My Decks</span>
-                                <Badge color="primary" size="sm">
-                                    {decks.length}
-                                </Badge>
-                            </div>
-                        }
-                    />
-                    <Tab
-                        key="community"
-                        title={
-                            <div className="flex items-center gap-2">
+                                <Badge>{decks.length}</Badge>
+                            </Tabs.Tab>
+
+                            <Tabs.Tab id="community">
                                 <span>Community</span>
-                                <Badge color="secondary" size="sm">
-                                    {communityDecks.length}
-                                </Badge>
-                            </div>
-                        }
-                    />
-                </Tabs>
+                                <Badge>{communityDecks.length}</Badge>
+                            </Tabs.Tab>
+                        </Tabs.List>
+
+                        <Tabs.Panel id="my-decks">
+                            {/* My decks content */}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel id="community">
+                            {/* Community content */}
+                        </Tabs.Panel>
+                    </Tabs>
 
                 {/* Deck Content */}
                 {activeTab === "my-decks" ? (
