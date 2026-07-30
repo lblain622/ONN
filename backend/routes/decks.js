@@ -1,6 +1,7 @@
 import express from 'express';
 import asyncHandler from '../middleware/asyncHandler.js';
 import auth, { authorize } from '../middleware/auth.js';
+import rateLimit from '../middleware/rateLimit.js';
 import {
     copyDeck,
     createDeck,
@@ -13,6 +14,7 @@ import {
 } from '../services/decks.js';
 
 const router = express.Router();
+router.use(rateLimit);
 
 router.get('/', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
     const decks = await getDecksByUserId(req.user.userId);

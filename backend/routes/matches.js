@@ -1,6 +1,7 @@
 import express from 'express';
 import asyncHandler from '../middleware/asyncHandler.js';
 import auth, { authorize } from '../middleware/auth.js';
+import rateLimit from '../middleware/rateLimit.js';
 import {
     createMatch,
     getMatchById,
@@ -13,6 +14,7 @@ import {
 } from '../services/matches.js';
 
 const router = express.Router();
+router.use(rateLimit);
 
 router.post('/', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
     const match = await createMatch(req.user.userId, req.body || {});
