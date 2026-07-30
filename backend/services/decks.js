@@ -139,9 +139,9 @@ async function resolveDeckCardsAndValidate(cards, description) {
     return { normalizedCards, validationErrors };
 }
 
-export async function createDeck(userId, name, description, cards = [], isPublic = false) {
+export async function createDeck(userId, name, description, cards = [], isPublic = false, allowInvalid = false) {
     const { normalizedCards, validationErrors } = await resolveDeckCardsAndValidate(cards, description);
-    if (validationErrors.length) {
+    if (validationErrors.length && !allowInvalid) {
         const error = new Error(validationErrors.join('; '));
         error.status = 400;
         throw error;
@@ -157,13 +157,15 @@ export async function createDeck(userId, name, description, cards = [], isPublic
             },
         });
 
-        await tx.deckCard.createMany({
-            data: normalizedCards.map((entry) => ({
-                deckId: newDeck.id,
-                cardId: entry.cardId,
-                quantity: entry.quantity,
-            })),
-        });
+        if (normalizedCards.length) {
+            await tx.deckCard.createMany({
+                data: normalizedCards.map((entry) => ({
+                    deckId: newDeck.id,
+                    cardId: entry.cardId,
+                    quantity: entry.quantity,
+                })),
+            });
+        }
 
         const createdDeck = await tx.deck.findUnique({
             where: { id: newDeck.id },
@@ -273,9 +275,9 @@ export async function getCommunityDecks() {
     return decks.map(decorateDeck);
 }
 
-export async function updateDeck(deckId, name, description, cards = [], isPublic = false) {
+export async function updateDeck(deckId, name, description, cards = [], isPublic = false, allowInvalid = false) {
     const { normalizedCards, validationErrors } = await resolveDeckCardsAndValidate(cards, description);
-    if (validationErrors.length) {
+    if (validationErrors.length && !allowInvalid) {
         const error = new Error(validationErrors.join('; '));
         error.status = 400;
         throw error;
@@ -292,13 +294,15 @@ export async function updateDeck(deckId, name, description, cards = [], isPublic
         });
 
         await tx.deckCard.deleteMany({ where: { deckId } });
-        await tx.deckCard.createMany({
-            data: normalizedCards.map((entry) => ({
-                deckId,
-                cardId: entry.cardId,
-                quantity: entry.quantity,
-            })),
-        });
+        if (normalizedCards.length) {
+            await tx.deckCard.createMany({
+                data: normalizedCards.map((entry) => ({
+                    deckId,
+                    cardId: entry.cardId,
+                    quantity: entry.quantity,
+                })),
+            });
+        }
 
         const updatedDeck = await tx.deck.findUnique({
             where: { id: deckId },

@@ -9,10 +9,6 @@ router.get('/search', auth, asyncHandler(async (req, res) => {
     const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
     const cardType = typeof req.query.type === 'string' ? req.query.type.trim().toUpperCase() : '';
 
-    if (!query || query.length < 2) {
-        return res.json([]);
-    }
-
     const cards = await searchCards(query, cardType || null);
     res.json(cards);
 }));

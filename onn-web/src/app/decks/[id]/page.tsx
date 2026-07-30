@@ -1,6 +1,6 @@
 "use client";
 
-import {use, useMemo, useState} from "react";
+import {use, useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Redo2, Save, Undo2} from "lucide-react";
 import {BuilderState} from "@/components/deckbuilder/types";
@@ -79,22 +79,19 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     }, [activeSection.selectedCards]);
 
     const groupedDeckCards = useMemo(() => {
-        const groups = new Map<string, { id: string; name: string; type: string; count: number }>();
+        const groups = new Map<string, { id: string; name: string; type: string; imageUrl?: string; count: number }>();
         builder.mainDeck.selectedCards.forEach((card) => {
             const entry = groups.get(card.id);
             if (entry) {
                 entry.count += 1;
             } else {
-                groups.set(card.id, {id: card.id, name: card.name, type: card.type, count: 1});
+                groups.set(card.id, {id: card.id, name: card.name, type: card.type, imageUrl: card.imageUrl, count: 1});
             }
         });
         return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
     }, [builder.mainDeck.selectedCards]);
 
     const handleSearchCards = async () => {
-        if (!query.trim()) {
-            return;
-        }
         setSearchError(null);
         setIsSearching(true);
         try {
@@ -105,6 +102,22 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
             setIsSearching(false);
         }
     };
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setSearchError(null);
+            setIsSearching(true);
+            handleSearch(targetSection, query.trim(), cardType)
+                .catch((error) => {
+                    setSearchError(error instanceof Error ? error.message : "Search failed");
+                })
+                .finally(() => {
+                    setIsSearching(false);
+                });
+        }, 200);
+
+        return () => clearTimeout(timeoutId);
+    }, [cardType, handleSearch, query, targetSection]);
 
     if (loading) {
         return <LoadingScreen/>;
@@ -145,10 +158,13 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                                 className="rounded-lg border border-gold/20 bg-darkblue px-3 py-2 text-sm">
                                             {isPublic ? "Public deck" : "Private deck"}
                                         </button>
-                                        <button type="button" onClick={handleSave} disabled={!validation.isValid || isSaving}
+                                        <button
+                                            type="button"
+                                            onClick={() => void handleSave({allowInvalid: !validation.isValid})}
+                                            disabled={isSaving}
                                                 className="inline-flex items-center gap-2 rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-darkblue disabled:opacity-50">
                                             {!isSaving && <Save size={16}/>}
-                                            {isSaving ? "Saving..." : "Save Deck"}
+                                            {isSaving ? "Saving..." : validation.isValid ? "Save Deck" : "Save Draft"}
                                         </button>
                                     </div>
                                 </div>
@@ -217,7 +233,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                     <button
                                         type="button"
                                         onClick={() => void handleSearchCards()}
-                                        disabled={!query.trim() || isSearching}
+                                        disabled={isSearching}
                                         className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-darkblue disabled:opacity-50"
                                     >
                                         {isSearching ? "Searching..." : "Search"}
@@ -225,7 +241,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
-                                    {["all", "unit", "spell", "artifact", "rune", "battlefield", "legend"].map((type) => (
+                                    {["all", "unit", "spell", "gear", "rune", "battlefield", "legend"].map((type) => (
                                         <button
                                             key={type}
                                             type="button"
@@ -300,27 +316,13 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                                 <div className="space-y-2">
                                                     {groupedDeckCards.length > 0 ? (
                                                         groupedDeckCards.map((card) => (
-                                                            <div
+                                                            <SelectedCard
                                                                 key={card.id}
-                                                                className="flex items-center justify-between rounded-lg border border-gold/10 bg-black/60 px-3 py-2"
-                                                            >
-                                                                <div className="min-w-0">
-                                                                    <p className="truncate text-sm">{card.name}</p>
-                                                                    <p className="text-xs text-zinc-500">{card.type}</p>
-                                                                </div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="text-sm text-zinc-300">{card.count}x</span>
-                                                                    {!isReadOnly && (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleRemove("mainDeck", card.id)}
-                                                                            className="rounded border border-danger/40 px-2 py-1 text-xs text-danger"
-                                                                        >
-                                                                            Remove
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            </div>
+                                                                card={card}
+                                                                count={card.count}
+                                                                readOnly={isReadOnly}
+                                                                onRemove={isReadOnly ? undefined : (cardId) => handleRemove("mainDeck", cardId)}
+                                                            />
                                                         ))
                                                     ) : (
                                                         <div className="rounded-lg border border-dashed border-gold/20 px-4 py-6 text-center text-sm text-zinc-500">
@@ -329,7 +331,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                                <div className="space-y-2">
                                                     {cards.map((card, index) => (
                                                         <SelectedCard
                                                             key={`${card.id}-${index}`}
