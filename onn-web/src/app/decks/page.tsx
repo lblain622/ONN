@@ -9,16 +9,10 @@ import {
     Card,
     CardContent,
     CardHeader,
-    Chip,
     Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownTrigger,
     Input, Label,
     Skeleton,
-    Tab,
     Tabs,
-    Tooltip
 } from "@heroui/react";
 import {
   Clock,
@@ -32,8 +26,6 @@ import {
   LogOut,
   Plus,
   Search,
-  SortAsc,
-  SortDesc,
   Trash2,
   Users
 } from "lucide-react";
@@ -191,7 +183,7 @@ export default function DecksPage() {
         const decksToFilter = activeTab === "my-decks" ? decks : communityDecks;
 
         // Filter
-        let filtered = decksToFilter.filter(deck =>
+        const filtered = decksToFilter.filter(deck =>
             deck.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (deck.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
             (deck.owner?.username?.toLowerCase() || "").includes(searchTerm.toLowerCase())
@@ -320,7 +312,8 @@ export default function DecksPage() {
         setSearchTerm("");
     };
 
-    const handleSortChange = (keys: any) => {
+    const handleSortChange = (keys: Set<React.Key> | "all") => {
+        if (keys === "all") return;
         const selected = Array.from(keys).pop() as SortOption;
         if (selected) setSortBy(selected);
     };
@@ -354,16 +347,7 @@ export default function DecksPage() {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                             <h2 className="text-xl font-semibold truncate">{deck.name}</h2>
-                            {isCommunity && (
-                                <Tooltip content="Public deck">
-                                    <Globe size={16} className="text-primary flex-shrink-0"/>
-                                </Tooltip>
-                            )}
-                            {!isCommunity && deck.isPublic && (
-                                <Tooltip content="Publicly shared">
-                                    <Globe size={16} className="text-gold flex-shrink-0"/>
-                                </Tooltip>
-                            )}
+                            {(isCommunity || deck.isPublic) && <Globe size={16} className="text-gold flex-shrink-0"/>}
                         </div>
                         <p className="mt-1 text-sm text-zinc-400 line-clamp-2">
                             {isCommunity
@@ -372,21 +356,12 @@ export default function DecksPage() {
                                     ? deck.description.split(/\r?\n/)[0]
                                     : "No description provided."}
                         </p>
-                        {isCommunity && deck.owner?.username && (
-                            <Chip size="sm" variant="flat" className="mt-2 w-fit" startcontent={<Users size={12}/>}>
-                                {deck.owner.username}
-                            </Chip>
-                        )}
                     </div>
 
-                    <Chip
-                        color={isCommunity ? "primary" : "secondary"}
-                        size="sm"
-                        variant="flat"
-                        startcontent={isCommunity ? <Users size={12}/> : <Lock size={12}/>}
-                    >
-                        {isCommunity ? "Public" : deck.format || "Standard"}
-                    </Chip>
+                    <div className="inline-flex items-center gap-1 rounded-full border border-gold/20 px-2 py-1 text-xs text-zinc-300">
+                        {isCommunity ? <Users size={12}/> : <Lock size={12}/>}
+                        <span>{isCommunity ? "Public" : deck.format || "Standard"}</span>
+                    </div>
                 </CardHeader>
 
                 <CardContent className="px-6 pb-6 pt-4">
@@ -399,11 +374,7 @@ export default function DecksPage() {
                             <span className="font-medium text-gold">Champion:</span>
                             <span className="truncate">{details.champion || "Not selected"}</span>
                         </p>
-                        {cardCount > 0 && (
-                            <p className="text-xs text-zinc-500">
-                                {cardCount} cards
-                            </p>
-                        )}
+                        {cardCount > 0 && <p className="text-xs text-zinc-500">{cardCount} cards</p>}
                     </div>
 
                     <div className="mt-5 flex items-center justify-between gap-3">
@@ -414,66 +385,38 @@ export default function DecksPage() {
 
                         {isCommunity ? (
                             <div className="flex gap-2">
-                                <Tooltip content="View this deck">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        isIconOnly
-                                        onPress={() => router.push(`/decks/${deck.id}`)}
-                                    >
-                                        <Eye size={16}/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Make your own copy">
-                                    <Button
-                                        size="sm"
-                                        color="primary"
-                                        isDisabled={isCopyingThis}
-                                        onPress={() => handleCopyDeck(deck)}
-                                        startcontent={isCopyingThis ? <Loader2 size={14} className="animate-spin"/> :
-                                            <Copy size={14}/>}
-                                    >
-                                        {isCopyingThis ? "Copying..." : "Copy"}
-                                    </Button>
-                                </Tooltip>
+                                <Button size="sm" variant="ghost" isIconOnly onPress={() => router.push(`/decks/${deck.id}`)}>
+                                    <Eye size={16}/>
+                                </Button>
+                                <Button size="sm" variant="primary" isDisabled={isCopyingThis} onPress={() => handleCopyDeck(deck)}>
+                                    {isCopyingThis ? <Loader2 size={14} className="animate-spin"/> : <Copy size={14}/>}
+                                    <span className="ml-1">{isCopyingThis ? "Copying..." : "Copy"}</span>
+                                </Button>
                             </div>
                         ) : (
                             <div className="flex gap-2">
-                                <Tooltip content="Edit deck">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        isIconOnly
-                                        onPress={() => router.push(`/decks/${deck.id}`)}
-                                    >
-                                        <Edit size={16}/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Delete deck">
-                                    <Button
-                                        size="sm"
-                                        color="danger"
-                                        variant="light"
-                                        isIconOnly
-                                        isLoading={isDeletingThis}
-                                        onPress={() => openDeleteModal(deck)}
-                                    >
-                                        <Trash2 size={16}/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content={deck.isPublic ? "Make private" : "Share publicly"}>
-                                    <Button
-                                        size="sm"
-                                        variant="flat"
-                                        color={deck.isPublic ? "success" : "default"}
-                                        isLoading={isUpdatingVisibilityThis}
-                                        onPress={() => handleToggleVisibility(deck)}
-                                        startcontent={!isUpdatingVisibilityThis && (deck.isPublic ? <Globe size={14}/> :
-                                            <Lock size={14}/>)}
-                                    >
-                                        {deck.isPublic ? "Public" : "Private"}
-                                    </Button>
-                                </Tooltip>
+                                <Button size="sm" variant="ghost" isIconOnly onPress={() => router.push(`/decks/${deck.id}`)}>
+                                    <Edit size={16}/>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="danger-soft"
+                                    isIconOnly
+                                    isDisabled={isDeletingThis}
+                                    onPress={() => openDeleteModal(deck)}
+                                >
+                                    {isDeletingThis ? <Loader2 size={14} className="animate-spin"/> : <Trash2 size={16}/>}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    isDisabled={isUpdatingVisibilityThis}
+                                    onPress={() => handleToggleVisibility(deck)}
+                                >
+                                    {isUpdatingVisibilityThis ? <Loader2 size={14} className="animate-spin"/> :
+                                        (deck.isPublic ? <Globe size={14}/> : <Lock size={14}/>)}
+                                    <span className="ml-1">{isUpdatingVisibilityThis ? "Saving..." : deck.isPublic ? "Public" : "Private"}</span>
+                                </Button>
                             </div>
                         )}
                     </div>
@@ -500,11 +443,11 @@ export default function DecksPage() {
                     </p>
                     {!isCommunity && (
                         <Button
-                            color="primary"
+                            variant="primary"
                             className="mt-6"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
                         >
+                            <Plus size={16}/>
                             Create Your First Deck
                         </Button>
                     )}
@@ -552,24 +495,24 @@ export default function DecksPage() {
 
                     <div className="flex flex-wrap gap-3">
                         <Button
-                            variant="flat"
+                            variant="secondary"
                             onPress={() => router.push("/matches")}
-                            startcontent={<Users size={16}/>}
                         >
+                            <Users size={16}/>
                             Lobbies
                         </Button>
                         <Button
-                            color="primary"
+                            variant="primary"
                             onPress={() => router.push("/decks/new")}
-                            startcontent={<Plus size={16}/>}
                         >
+                            <Plus size={16}/>
                             Create deck
                         </Button>
                         <Button
                             variant="ghost"
                             onPress={handleLogout}
-                            startcontent={<LogOut size={16}/>}
                         >
+                            <LogOut size={16}/>
                             Sign out
                         </Button>
                     </div>
@@ -580,12 +523,9 @@ export default function DecksPage() {
                     <Alert
                         color="danger"
                         title="Error"
-                        description={error || deleteError}
-                        onClose={() => {
-                            setError("");
-                            setDeleteError("");
-                        }}
-                    />
+                    >
+                        {error || deleteError}
+                    </Alert>
                 )}
 
                 {/* Search and Sort */}
@@ -618,9 +558,9 @@ export default function DecksPage() {
                         <Dropdown>
                             <Button
                                 size="sm"
-                                variant="flat"
-                                startContent={<Filter size={14} />}
+                                variant="secondary"
                             >
+                                <Filter size={14} />
                                 Sort: {sortBy.replace("-", " ")}
                             </Button>
 
@@ -669,13 +609,8 @@ export default function DecksPage() {
                             </Tabs.Tab>
                         </Tabs.List>
 
-                        <Tabs.Panel id="my-decks">
-                            {/* My decks content */}
-                        </Tabs.Panel>
-
-                        <Tabs.Panel id="community">
-                            {/* Community content */}
-                        </Tabs.Panel>
+                        <Tabs.Panel id="my-decks"> </Tabs.Panel>
+                        <Tabs.Panel id="community"> </Tabs.Panel>
                     </Tabs>
 
                 {/* Deck Content */}
@@ -723,23 +658,25 @@ export default function DecksPage() {
                                 <CardContent className="px-6 py-4">
                                     <p className="text-zinc-300">
                                         Are you sure you want to delete <span
-                                        className="font-semibold text-white">"{deckToDelete.name}"</span>?
+                                        className="font-semibold text-white">&quot;{deckToDelete.name}&quot;</span>?
                                         All cards and data associated with this deck will be permanently removed.
                                     </p>
                                     {deleteError && (
-                                        <Alert color="danger" title="Error" description={deleteError} className="mt-4"/>
+                                        <Alert color="danger" title="Error" className="mt-4">
+                                            {deleteError}
+                                        </Alert>
                                     )}
                                 </CardContent>
                                 <div className="flex gap-3 px-6 pb-6 pt-2 justify-end">
-                                    <Button variant="flat" onPress={closeDeleteModal}>
+                                    <Button variant="secondary" onPress={closeDeleteModal}>
                                         Cancel
                                     </Button>
                                     <Button
-                                        color="danger"
-                                        isLoading={isDeleting === deckToDelete.id}
+                                        variant="danger"
+                                        isDisabled={isDeleting === deckToDelete.id}
                                         onPress={handleDeleteDeck}
-                                        startcontent={isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
                                     >
+                                        {isDeleting !== deckToDelete.id && <Trash2 size={16}/>}
                                         {isDeleting === deckToDelete.id ? "Deleting..." : "Delete Deck"}
                                     </Button>
                                 </div>
@@ -754,7 +691,7 @@ export default function DecksPage() {
                         {activeTab === "my-decks"
                             ? `${filteredAndSortedDecks.length} of ${decks.length} decks shown`
                             : `${filteredAndSortedDecks.length} of ${communityDecks.length} community decks shown`}
-                        {searchTerm && ` (filtered by "${searchTerm}")`}
+                        {searchTerm && ` (filtered by ${searchTerm})`}
                     </p>
                 </div>
             </div>

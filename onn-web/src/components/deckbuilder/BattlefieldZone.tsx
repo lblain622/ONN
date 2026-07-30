@@ -1,5 +1,4 @@
 import React from "react";
-import {Button} from "@heroui/react";
 
 import {SelectedCard} from "./SelectedCard";
 import {CardOption} from "./types";
@@ -30,12 +29,13 @@ export function BattlefieldZone({
                 </div>
 
                 {!isReadOnly && (
-                    <Button
-                        size="sm"
-                        onPress={onOpenSearch}
+                    <button
+                        type="button"
+                        onClick={onOpenSearch}
+                        className="rounded-md border border-gold/20 px-3 py-1.5 text-sm text-zinc-300 hover:text-gold"
                     >
                         Add Battlefield
-                    </Button>
+                    </button>
                 )}
             </div>
 

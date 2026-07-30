@@ -1,5 +1,4 @@
 import React from "react";
-import {Button} from "@heroui/react";
 import {ArrowLeft} from "lucide-react";
 
 type DeckHeaderProps = {
@@ -29,13 +28,14 @@ export function DeckHeader({
                 </p>
             </div>
 
-            <Button
-                variant="bordered"
-                startcontent={<ArrowLeft size={16}/>}
-                onPress={onBack}
+            <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex items-center gap-2 rounded-lg border border-gold/30 bg-black px-4 py-2 text-sm text-zinc-200 hover:text-gold"
             >
+                <ArrowLeft size={16}/>
                 Back to Decks
-            </Button>
+            </button>
         </header>
     );
 }

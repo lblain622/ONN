@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import {Button, Card, Tooltip} from "@heroui/react";
 import {X} from "lucide-react";
 import {CardOption} from "./types";
 import {CardImage} from "./CardImage";
@@ -27,7 +26,7 @@ export function SelectedCard({
     };
 
     return (
-        <Card
+        <div
             className={`
                 overflow-hidden 
                 border border-gold/20 
@@ -38,8 +37,15 @@ export function SelectedCard({
                 ${!readOnly && isHovered ? "border-primary shadow-lg" : ""}
                 ${className}
             `}
-            isPressable={!readOnly}
-            onPress={!readOnly ? () => onRemove?.(card.id) : undefined}
+            role={!readOnly ? "button" : undefined}
+            tabIndex={!readOnly ? 0 : -1}
+            onClick={!readOnly ? () => onRemove?.(card.id) : undefined}
+            onKeyDown={!readOnly ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onRemove?.(card.id);
+                }
+            } : undefined}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -58,26 +64,22 @@ export function SelectedCard({
                 {!readOnly && onRemove && isHovered && (
                     <div
                         className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-200">
-                        <Button
-                            isIconOnly
-                            color="danger"
-                            size="lg"
-                            onPress={handleRemove}
-                            className="transform transition-transform hover:scale-110"
+                        <button
+                            type="button"
+                            onClick={handleRemove}
+                            className="rounded-full border border-danger/40 bg-danger/20 p-3 text-danger transform transition-transform hover:scale-110"
                         >
                             <X size={24}/>
-                        </Button>
+                        </button>
                     </div>
                 )}
             </div>
 
             <div className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                 <div className="min-w-0 flex-1">
-                    <Tooltip content={card.name}>
-                        <p className="truncate font-medium text-white">
-                            {card.name}
-                        </p>
-                    </Tooltip>
+                    <p className="truncate font-medium text-white" title={card.name}>
+                        {card.name}
+                    </p>
                     {card.type && (
                         <p className="truncate text-xs text-zinc-400">
                             {card.type}
@@ -86,18 +88,16 @@ export function SelectedCard({
                 </div>
 
                 {!readOnly && onRemove && !isHovered && (
-                    <Button
-                        size="sm"
-                        variant="light"
-                        color="danger"
-                        onPress={handleRemove}
+                    <button
+                        type="button"
+                        onClick={handleRemove}
                         className="shrink-0 min-w-0 px-2 opacity-60 hover:opacity-100"
                         aria-label={`Remove ${card.name}`}
                     >
                         ✕
-                    </Button>
+                    </button>
                 )}
             </div>
-        </Card>
+        </div>
     );
 }
