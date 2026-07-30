@@ -1,6 +1,6 @@
 // components/deckbuilder/DeckStats.tsx
 import React, {useMemo} from "react";
-import {BuilderState} from "./types";
+import {BuilderState, CardOption} from "./types";
 
 type DeckStatsProps = {
     builder: BuilderState;
@@ -9,12 +9,15 @@ type DeckStatsProps = {
 
 export function DeckStats({builder, className = ""}: DeckStatsProps) {
     const stats = useMemo(() => {
+        const getCardIdentity = (card: CardOption) => (card.cleanName || card.name || card.id).toLowerCase();
         const mainDeckCount = builder.mainDeck.selectedCards.length;
         const championCount = builder.champion.selectedCards.length;
         const runeCount = builder.runes.selectedCards.length;
         const battlefieldCount = builder.battlefields.selectedCards.length;
+        const mainDeckTotal = mainDeckCount + championCount;
 
         const allCards = [
+            ...builder.champion.selectedCards,
             ...builder.mainDeck.selectedCards,
             ...builder.runes.selectedCards,
             ...builder.battlefields.selectedCards,
@@ -28,11 +31,12 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
 
         return {
             mainDeckCount,
+            mainDeckTotal,
             championCount,
             runeCount,
             battlefieldCount,
             total: mainDeckCount + championCount + runeCount + battlefieldCount,
-            unique: new Set(allCards.map(c => c.id)).size,
+            unique: new Set(allCards.map(getCardIdentity)).size,
             typeDistribution,
         };
     }, [builder]);
@@ -64,16 +68,17 @@ export function DeckStats({builder, className = ""}: DeckStatsProps) {
                     <div>
                         <div className="flex justify-between text-sm">
                             <span className="text-zinc-400">Main Deck</span>
-                            <span className={stats.mainDeckCount === 40 ? "text-success" : "text-zinc-400"}>
-                                {stats.mainDeckCount}/40
+                            <span className={stats.mainDeckTotal === 40 ? "text-success" : "text-zinc-400"}>
+                                {stats.mainDeckTotal}/40
                             </span>
                         </div>
                         <div className="mt-1 h-2 rounded-full bg-gold/10">
                             <div
-                                className={`h-2 rounded-full transition-all ${getProgressClass(getProgressColor(stats.mainDeckCount, 40))}`}
-                                style={{width: `${Math.min((stats.mainDeckCount / 40) * 100, 100)}%`}}
+                                className={`h-2 rounded-full transition-all ${getProgressClass(getProgressColor(stats.mainDeckTotal, 40))}`}
+                                style={{width: `${Math.min((stats.mainDeckTotal / 40) * 100, 100)}%`}}
                             />
                         </div>
+                        <p className="mt-1 text-xs text-zinc-500">Includes Champion</p>
                     </div>
 
                     {/* Runes Progress */}

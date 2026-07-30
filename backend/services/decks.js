@@ -13,6 +13,7 @@ function normalizeCards(cards = []) {
 
 function validateDeckCards(cardRows, providedCards) {
     const errors = [];
+    const getCardIdentity = (card) => (card.cleanName || card.name || card.id || '').trim().toLowerCase();
 
     const legendCount = cardRows
         .filter((row) => row.card.type === 'LEGEND')
@@ -49,9 +50,23 @@ function validateDeckCards(cardRows, providedCards) {
         errors.push(`Main deck must contain exactly 40 cards including Champion (currently ${mainDeckCount})`);
     }
 
+    const cardCopiesByIdentity = new Map();
     for (const row of cardRows) {
-        if (row.quantity > 3) {
-            errors.push(`Card "${row.card.name}" has ${row.quantity} copies (maximum 3)`);
+        const identity = getCardIdentity(row.card);
+        if (!identity) continue;
+        const existing = cardCopiesByIdentity.get(identity);
+        if (existing) {
+            existing.quantity += row.quantity;
+        } else {
+            cardCopiesByIdentity.set(identity, {
+                name: row.card.name,
+                quantity: row.quantity,
+            });
+        }
+    }
+    for (const entry of cardCopiesByIdentity.values()) {
+        if (entry.quantity > 3) {
+            errors.push(`Card "${entry.name}" has ${entry.quantity} copies (maximum 3)`);
         }
     }
 
@@ -62,17 +77,26 @@ function validateDeckCards(cardRows, providedCards) {
     return errors;
 }
 
-function parseChampionName(description) {
+function parseDescriptionField(description, field) {
     if (typeof description !== 'string') {
         return null;
     }
 
-    const championLine = description
+    const line = description
         .split(/\r?\n/)
         .map((line) => line.trim())
-        .find((line) => line.startsWith('Champion:'));
+        .find((line) => line.startsWith(`${field}:`));
 
-    return championLine ? championLine.slice('Champion:'.length).trim() || null : null;
+    if (!line) return null;
+    return line.slice(`${field}:`.length).trim() || null;
+}
+
+function parseChampionName(description) {
+    return parseDescriptionField(description, 'Champion');
+}
+
+function parseChampionId(description) {
+    return parseDescriptionField(description, 'ChampionId');
 }
 
 function getDeckCardCount(deckCards = []) {
@@ -80,13 +104,14 @@ function getDeckCardCount(deckCards = []) {
 }
 
 function computeDeckLegality(deck) {
+    const championId = parseChampionId(deck.description);
     const championName = parseChampionName(deck.description);
     const rows = (deck.cards || [])
         .filter((row) => row?.card)
         .map((row) => ({
             quantity: row.quantity,
             card: row.card,
-            isChampion: championName ? row.card.name === championName : false,
+            isChampion: championId ? row.card.id === championId : championName ? row.card.name === championName : false,
         }));
     const validationErrors = validateDeckCards(rows, deck.cards || []);
     return {
@@ -110,6 +135,7 @@ async function resolveDeckCardsAndValidate(cards, description) {
         return { normalizedCards, validationErrors: ['Deck must contain at least one card'] };
     }
 
+    const championId = parseChampionId(description);
     const championName = parseChampionName(description);
 
     const cardIds = normalizedCards.map((entry) => entry.cardId);
@@ -118,6 +144,7 @@ async function resolveDeckCardsAndValidate(cards, description) {
         select: {
             id: true,
             name: true,
+            cleanName: true,
             type: true,
         },
     });
@@ -130,7 +157,7 @@ async function resolveDeckCardsAndValidate(cards, description) {
             return {
                 ...entry,
                 card,
-                isChampion: championName ? card.name === championName : false,
+                isChampion: championId ? card.id === championId : championName ? card.name === championName : false,
             };
         })
         .filter(Boolean);

@@ -1,6 +1,6 @@
 // hooks/useDeckValidation.ts
 import {useMemo} from "react";
-import {BuilderState} from "@/components/deckbuilder/types";
+import {BuilderState, CardOption} from "@/components/deckbuilder/types";
 
 type ValidationResult = {
     isValid: boolean;
@@ -22,6 +22,7 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
     return useMemo(() => {
         const errors: string[] = [];
         const warnings: string[] = [];
+        const getCardIdentity = (card: CardOption) => (card.cleanName || card.name || card.id).toLowerCase();
 
         const mainDeckCount = builder.mainDeck.selectedCards.length;
         const championCount = builder.champion.selectedCards.length;
@@ -60,6 +61,7 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
 
         // Duplicate validation
         const allCards = [
+            ...builder.champion.selectedCards,
             ...builder.mainDeck.selectedCards,
             ...builder.runes.selectedCards,
             ...builder.battlefields.selectedCards,
@@ -67,12 +69,13 @@ export function useDeckValidation(builder: BuilderState): ValidationResult {
 
         const duplicateCounts = new Map<string, number>();
         allCards.forEach(card => {
-            duplicateCounts.set(card.id, (duplicateCounts.get(card.id) || 0) + 1);
+            const identity = getCardIdentity(card);
+            duplicateCounts.set(identity, (duplicateCounts.get(identity) || 0) + 1);
         });
 
-        duplicateCounts.forEach((count, cardId) => {
+        duplicateCounts.forEach((count, cardIdentity) => {
             if (count > 3) {
-                const card = allCards.find(c => c.id === cardId);
+                const card = allCards.find(c => getCardIdentity(c) === cardIdentity);
                 errors.push(`Card "${card?.name}" has ${count} copies (maximum 3)`);
             }
         });

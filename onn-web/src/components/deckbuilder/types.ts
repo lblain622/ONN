@@ -1,7 +1,9 @@
 export type CardOption = {
     id: string;
     name: string;
+    cleanName?: string | null;
     type: string;
+    alternateArt?: boolean;
     imageUrl?: string;
     richText?: string;
     domains?: Array<{ domain: { name: string } }>;

@@ -9,14 +9,41 @@ function createSection(type: string): SectionState {
     return {query: "", type, searchResults: [], selectedCards: []};
 }
 
+function parseDescriptionField(description: string | null | undefined, field: string): string | null {
+    if (!description) return null;
+    const line = description
+        .split(/\r?\n/)
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith(`${field}:`));
+    if (!line) return null;
+    const value = line.slice(`${field}:`.length).trim();
+    return value || null;
+}
+
+const SECTION_DEFAULT_TYPES: Record<keyof BuilderState, string> = {
+    legend: "LEGEND",
+    champion: "UNIT",
+    mainDeck: "ALL",
+    runes: "RUNE",
+    battlefields: "BATTLEFIELD",
+};
+
+const SECTION_ALLOWED_TYPES: Record<keyof BuilderState, Set<string>> = {
+    legend: new Set(["LEGEND"]),
+    champion: new Set(["UNIT"]),
+    mainDeck: new Set(["UNIT", "SPELL", "GEAR"]),
+    runes: new Set(["RUNE"]),
+    battlefields: new Set(["BATTLEFIELD"]),
+};
+
 export function useDeckBuilder(deckId: string) {
     const router = useRouter();
     const [builder, setBuilder] = useState<BuilderState>({
-        legend: createSection("LEGEND"),
-        champion: createSection("UNIT"),
-        mainDeck: createSection("UNIT"),
-        runes: createSection("RUNE"),
-        battlefields: createSection("BATTLEFIELD"),
+        legend: createSection(SECTION_DEFAULT_TYPES.legend),
+        champion: createSection(SECTION_DEFAULT_TYPES.champion),
+        mainDeck: createSection(SECTION_DEFAULT_TYPES.mainDeck),
+        runes: createSection(SECTION_DEFAULT_TYPES.runes),
+        battlefields: createSection(SECTION_DEFAULT_TYPES.battlefields),
     });
     const [deckName, setDeckName] = useState("New Deck");
     const [loading, setLoading] = useState(true);
@@ -57,12 +84,14 @@ export function useDeckBuilder(deckId: string) {
             }
 
             const newBuilder: BuilderState = {
-                legend: createSection("LEGEND"),
-                champion: createSection("UNIT"),
-                mainDeck: createSection("UNIT"),
-                runes: createSection("RUNE"),
-                battlefields: createSection("BATTLEFIELD"),
+                legend: createSection(SECTION_DEFAULT_TYPES.legend),
+                champion: createSection(SECTION_DEFAULT_TYPES.champion),
+                mainDeck: createSection(SECTION_DEFAULT_TYPES.mainDeck),
+                runes: createSection(SECTION_DEFAULT_TYPES.runes),
+                battlefields: createSection(SECTION_DEFAULT_TYPES.battlefields),
             };
+            const championId = parseDescriptionField(deckData.description, "ChampionId");
+            const championName = parseDescriptionField(deckData.description, "Champion");
 
             deckData.cards.forEach((dc: any) => {
                 const card = dc.card;
@@ -76,7 +105,7 @@ export function useDeckBuilder(deckId: string) {
                 } else if (type === "BATTLEFIELD") {
                     newBuilder.battlefields.selectedCards.push(...Array(quantity).fill(card));
                 } else if (type === "UNIT") {
-                    const isChampion = deckData.description?.includes(`Champion: ${card.name}`);
+                    const isChampion = championId ? card.id === championId : championName ? card.name === championName : false;
                     if (isChampion) {
                         newBuilder.champion.selectedCards = [card];
                     } else {
@@ -140,12 +169,19 @@ export function useDeckBuilder(deckId: string) {
     }, []);
 
     const handleSearch = useCallback(async (sectionKey: keyof BuilderState, query: string, cardType: string) => {
-        const normalizedType = cardType === "all" ? builder[sectionKey].type : cardType.toUpperCase();
+        const normalizedQuery = query.trim();
+        const normalizedType = cardType === "all"
+            ? SECTION_DEFAULT_TYPES[sectionKey]
+            : cardType.toUpperCase();
         const typeParam = normalizedType === "ARTIFACT" ? "GEAR" : normalizedType;
-        const params = new URLSearchParams({
-            query: query.trim(),
-            type: typeParam,
-        });
+        const params = new URLSearchParams();
+
+        if (normalizedQuery) {
+            params.set("query", normalizedQuery);
+        }
+        if (typeParam && typeParam !== "ALL") {
+            params.set("type", typeParam);
+        }
 
         const response = await fetch(`${API_URL}/cards/search?${params.toString()}`, {
             credentials: "include",
@@ -153,15 +189,17 @@ export function useDeckBuilder(deckId: string) {
 
         if (!response.ok) throw new Error("Search failed");
         const results = await response.json();
+        const allowedTypes = SECTION_ALLOWED_TYPES[sectionKey];
+        const filteredResults = results.filter((card: CardOption) => allowedTypes.has(card.type));
 
         setBuilder(prev => ({
             ...prev,
             [sectionKey]: {
                 ...prev[sectionKey],
-                searchResults: results
+                searchResults: filteredResults
             }
         }));
-    }, [builder]);
+    }, []);
 
     const handleSave = useCallback(async (options?: { allowInvalid?: boolean }) => {
         setIsSaving(true);
@@ -189,6 +227,7 @@ export function useDeckBuilder(deckId: string) {
             const description = [
                 legendCard ? `Legend: ${legendCard.name}` : null,
                 championCard ? `Champion: ${championCard.name}` : null,
+                championCard ? `ChampionId: ${championCard.id}` : null,
             ].filter(Boolean).join("\n");
 
             const method = deckId === "new" ? "POST" : "PUT";

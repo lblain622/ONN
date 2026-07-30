@@ -34,10 +34,18 @@ type DeckSection = {
 const DECK_SECTIONS: DeckSection[] = [
     {key: "legend", label: "Legend", limit: 1},
     {key: "champion", label: "Champion", limit: 1},
-    {key: "mainDeck", label: "Main Deck", limit: 39},
+    {key: "mainDeck", label: "Main Deck (excludes Champion)", limit: 39},
     {key: "battlefields", label: "Battlefields", limit: 3},
     {key: "runes", label: "Runes", limit: 12},
 ];
+
+const SECTION_FILTER_OPTIONS: Record<keyof BuilderState, string[]> = {
+    legend: ["legend"],
+    champion: ["unit"],
+    mainDeck: ["all", "unit", "spell", "gear"],
+    battlefields: ["battlefield"],
+    runes: ["rune"],
+};
 
 export default function DeckPage({params}: { params: Promise<{ id: string }> }) {
     const {id} = use(params);
@@ -70,6 +78,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     const [searchError, setSearchError] = useState<string | null>(null);
 
     const activeSection = builder[targetSection];
+    const activeFilters = SECTION_FILTER_OPTIONS[targetSection];
     const selectedMap = useMemo(() => {
         const map = new Map<string, number>();
         activeSection.selectedCards.forEach((card) => {
@@ -79,19 +88,33 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     }, [activeSection.selectedCards]);
 
     const groupedDeckCards = useMemo(() => {
+        const getCardIdentity = (card: { cleanName?: string | null; name: string; id: string }) =>
+            (card.cleanName || card.name || card.id).toLowerCase();
         const groups = new Map<string, { id: string; name: string; type: string; imageUrl?: string; count: number }>();
         builder.mainDeck.selectedCards.forEach((card) => {
-            const entry = groups.get(card.id);
+            const identity = getCardIdentity(card);
+            const entry = groups.get(identity);
             if (entry) {
                 entry.count += 1;
             } else {
-                groups.set(card.id, {id: card.id, name: card.name, type: card.type, imageUrl: card.imageUrl, count: 1});
+                groups.set(identity, {id: card.id, name: card.name, type: card.type, imageUrl: card.imageUrl, count: 1});
             }
         });
         return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
     }, [builder.mainDeck.selectedCards]);
 
     const handleSearchCards = async () => {
+        if (!query.trim()) {
+            setSearchError(null);
+            setBuilder((prev) => ({
+                ...prev,
+                [targetSection]: {
+                    ...prev[targetSection],
+                    searchResults: [],
+                },
+            }));
+            return;
+        }
         setSearchError(null);
         setIsSearching(true);
         try {
@@ -104,6 +127,29 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     };
 
     useEffect(() => {
+        const firstFilter = activeFilters[0];
+        if (!activeFilters.includes(cardType)) {
+            setCardType(firstFilter);
+        }
+    }, [activeFilters, cardType]);
+
+    useEffect(() => {
+        if (!query.trim()) {
+            setSearchError(null);
+            setIsSearching(false);
+            setBuilder((prev) => {
+                if (prev[targetSection].searchResults.length === 0) return prev;
+                return {
+                    ...prev,
+                    [targetSection]: {
+                        ...prev[targetSection],
+                        searchResults: [],
+                    },
+                };
+            });
+            return;
+        }
+
         const timeoutId = setTimeout(() => {
             setSearchError(null);
             setIsSearching(true);
@@ -241,7 +287,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
-                                    {["all", "unit", "spell", "gear", "rune", "battlefield", "legend"].map((type) => (
+                                    {activeFilters.map((type) => (
                                         <button
                                             key={type}
                                             type="button"
