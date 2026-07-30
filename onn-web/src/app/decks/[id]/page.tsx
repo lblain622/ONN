@@ -1,6 +1,6 @@
 "use client";
 
-import {useMemo, useState} from "react";
+import {use, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {Redo2, Save, Undo2} from "lucide-react";
 import {BuilderState} from "@/components/deckbuilder/types";
@@ -39,8 +39,8 @@ const DECK_SECTIONS: DeckSection[] = [
     {key: "runes", label: "Runes", limit: 12},
 ];
 
-export default function DeckPage({params}: { params: { id: string } }) {
-    const {id} = params;
+export default function DeckPage({params}: { params: Promise<{ id: string }> }) {
+    const {id} = use(params);
     const router = useRouter();
 
     const {
