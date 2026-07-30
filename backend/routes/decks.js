@@ -47,7 +47,7 @@ router.get('/:deckId', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req
 }));
 
 router.post('/', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
-    const { name, description, builderDetails, cards = [], isPublic = false } = req.body;
+    const { name, description, builderDetails, cards = [], isPublic = false, allowInvalid = false } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
         return res.status(400).json({ message: 'Deck name is required' });
@@ -57,13 +57,13 @@ router.post('/', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res)
     const builderText = builderDetails ? `Deck builder rules: 1 legend card; 40-card main deck including ${builderDetails.championCard || 'the chosen champion'}; exactly 12 rune cards; exactly 3 battlefields; every card must match the legend's domain and colors (${builderDetails.domain || 'domain'} / ${builderDetails.colors || 'colors'}).` : null;
     const persistedDescription = [trimmedDescription, builderText].filter(Boolean).join('\n\n') || null;
 
-    const deck = await createDeck(req.user.userId, name.trim(), persistedDescription, cards, isPublic);
+    const deck = await createDeck(req.user.userId, name.trim(), persistedDescription, cards, isPublic, Boolean(allowInvalid));
     res.status(201).json(deck);
 }));
 
 router.put('/:deckId', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
     const { deckId } = req.params;
-    const { name, description, cards = [], isPublic = false } = req.body;
+    const { name, description, cards = [], isPublic = false, allowInvalid = false } = req.body;
     const existingDeck = await getDeckById(deckId);
 
     if (!existingDeck) {
@@ -78,7 +78,7 @@ router.put('/:deckId', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req
         return res.status(400).json({ message: 'Deck name is required' });
     }
 
-    const updatedDeck = await updateDeck(deckId, name.trim(), description?.trim() || null, cards, isPublic);
+    const updatedDeck = await updateDeck(deckId, name.trim(), description?.trim() || null, cards, isPublic, Boolean(allowInvalid));
     res.json(updatedDeck);
 }));
 
