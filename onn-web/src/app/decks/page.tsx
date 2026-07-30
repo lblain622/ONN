@@ -53,6 +53,10 @@ type Deck = {
         username: string;
     };
     cardCount?: number;
+    legality?: {
+        isLegal: boolean;
+        errors?: string[];
+    };
     _count?: {
         cards: number;
     };
@@ -137,7 +141,7 @@ export default function DecksPage() {
     useEffect(() => {
         async function loadDecks() {
             try {
-                const response = await fetch(`${API_URL}/decks`, {
+                const response = await fetch(`${API_URL}/decks/my`, {
                     method: "GET",
                     credentials: "include",
                 });
@@ -273,7 +277,7 @@ export default function DecksPage() {
         setError("");
 
         try {
-            const response = await fetch(`${API_URL}/decks/${deck.id}/visibility`, {
+            const response = await fetch(`${API_URL}/decks/${deck.id}/share`, {
                 method: "PATCH",
                 headers: {"Content-Type": "application/json"},
                 credentials: "include",
@@ -368,6 +372,11 @@ export default function DecksPage() {
                                     ? deck.description.split(/\r?\n/)[0]
                                     : "No description provided."}
                         </p>
+                        {isCommunity && deck.owner?.username && (
+                            <Chip size="sm" variant="flat" className="mt-2 w-fit" startcontent={<Users size={12}/>}>
+                                {deck.owner.username}
+                            </Chip>
+                        )}
                     </div>
 
                     <Chip

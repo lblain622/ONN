@@ -19,6 +19,11 @@ router.get('/', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) 
     res.json(decks);
 }));
 
+router.get('/my', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
+    const decks = await getDecksByUserId(req.user.userId);
+    res.json(decks);
+}));
+
 router.get('/community', auth, authorize('USER', 'ADMIN'), asyncHandler(async (_req, res) => {
     const decks = await getCommunityDecks();
     res.json(decks);
@@ -75,7 +80,7 @@ router.put('/:deckId', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req
     res.json(updatedDeck);
 }));
 
-router.patch('/:deckId/visibility', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
+async function handleUpdateShare(req, res) {
     const { deckId } = req.params;
     const { isPublic } = req.body;
     const existingDeck = await getDeckById(deckId);
@@ -94,7 +99,10 @@ router.patch('/:deckId/visibility', auth, authorize('USER', 'ADMIN'), asyncHandl
 
     const updatedDeck = await updateDeckVisibility(deckId, isPublic);
     res.json(updatedDeck);
-}));
+}
+
+router.patch('/:deckId/share', auth, authorize('USER', 'ADMIN'), asyncHandler(handleUpdateShare));
+router.patch('/:deckId/visibility', auth, authorize('USER', 'ADMIN'), asyncHandler(handleUpdateShare));
 
 router.post('/:deckId/copy', auth, authorize('USER', 'ADMIN'), asyncHandler(async (req, res) => {
     const { deckId } = req.params;
