@@ -3,7 +3,7 @@ import {useCallback, useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import {BuilderState, CardOption, SectionState} from "@/components/deckbuilder/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 function createSection(type: string): SectionState {
     return {query: "", type, searchResults: [], selectedCards: []};
