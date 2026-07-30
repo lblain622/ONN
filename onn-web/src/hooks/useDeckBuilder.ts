@@ -36,6 +36,20 @@ const SECTION_ALLOWED_TYPES: Record<keyof BuilderState, Set<string>> = {
     battlefields: new Set(["BATTLEFIELD"]),
 };
 
+type DeckCardEntry = {
+    quantity: number;
+    card: CardOption;
+};
+
+type DeckResponse = {
+    id: string;
+    ownerId: string;
+    name: string;
+    description?: string | null;
+    isPublic?: boolean;
+    cards: DeckCardEntry[];
+};
+
 export function useDeckBuilder(deckId: string) {
     const router = useRouter();
     const [builder, setBuilder] = useState<BuilderState>({
@@ -75,7 +89,7 @@ export function useDeckBuilder(deckId: string) {
 
             if (!response.ok) throw new Error("Failed to fetch deck");
 
-            const deckData = await response.json();
+            const deckData = await response.json() as DeckResponse;
             setDeckName(deckData.name);
             setIsPublic(Boolean(deckData.isPublic));
 
@@ -93,7 +107,7 @@ export function useDeckBuilder(deckId: string) {
             const championId = parseDescriptionField(deckData.description, "ChampionId");
             const championName = parseDescriptionField(deckData.description, "Champion");
 
-            deckData.cards.forEach((dc: any) => {
+            deckData.cards.forEach((dc) => {
                 const card = dc.card;
                 const quantity = dc.quantity;
                 const type = card.type;

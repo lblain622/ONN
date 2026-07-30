@@ -79,6 +79,19 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
 
     const activeSection = builder[targetSection];
     const activeFilters = SECTION_FILTER_OPTIONS[targetSection];
+    const selectSection = (sectionKey: keyof BuilderState) => {
+        setTargetSection(sectionKey);
+        setCardType(SECTION_FILTER_OPTIONS[sectionKey][0]);
+        setQuery("");
+        setSearchError(null);
+        setBuilder((prev) => ({
+            ...prev,
+            [sectionKey]: {
+                ...prev[sectionKey],
+                searchResults: [],
+            },
+        }));
+    };
     const selectedMap = useMemo(() => {
         const map = new Map<string, number>();
         activeSection.selectedCards.forEach((card) => {
@@ -127,28 +140,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
     };
 
     useEffect(() => {
-        const firstFilter = activeFilters[0];
-        if (!activeFilters.includes(cardType)) {
-            setCardType(firstFilter);
-        }
-    }, [activeFilters, cardType]);
-
-    useEffect(() => {
-        if (!query.trim()) {
-            setSearchError(null);
-            setIsSearching(false);
-            setBuilder((prev) => {
-                if (prev[targetSection].searchResults.length === 0) return prev;
-                return {
-                    ...prev,
-                    [targetSection]: {
-                        ...prev[targetSection],
-                        searchResults: [],
-                    },
-                };
-            });
-            return;
-        }
+        if (!query.trim()) return;
 
         const timeoutId = setTimeout(() => {
             setSearchError(null);
@@ -251,7 +243,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                     <button
                                         key={section.key}
                                         type="button"
-                                        onClick={() => setTargetSection(section.key)}
+                                        onClick={() => selectSection(section.key)}
                                         className={`rounded-lg px-3 py-1.5 text-sm transition ${
                                             targetSection === section.key
                                                 ? "bg-gold/20 text-gold"
@@ -268,7 +260,20 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                     <input
                                         placeholder={`Search ${DECK_SECTIONS.find((section) => section.key === targetSection)?.label.toLowerCase()} cards...`}
                                         value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
+                                        onChange={(e) => {
+                                            const nextQuery = e.target.value;
+                                            setQuery(nextQuery);
+                                            if (!nextQuery.trim()) {
+                                                setSearchError(null);
+                                                setBuilder((prev) => ({
+                                                    ...prev,
+                                                    [targetSection]: {
+                                                        ...prev[targetSection],
+                                                        searchResults: [],
+                                                    },
+                                                }));
+                                            }
+                                        }}
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") {
                                                 void handleSearchCards();
@@ -352,7 +357,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                                     <button
                                                         type="button"
                                                         disabled={!canAdd}
-                                                        onClick={() => setTargetSection(section.key)}
+                                                        onClick={() => selectSection(section.key)}
                                                         className="w-full rounded-lg border border-dashed border-gold/30 px-4 py-8 text-sm text-zinc-400 enabled:hover:text-gold"
                                                     >
                                                         + Add {section.label}
@@ -398,7 +403,7 @@ export default function DeckPage({params}: { params: Promise<{ id: string }> }) 
                                                 <div className="mt-3">
                                                     <button
                                                         type="button"
-                                                        onClick={() => setTargetSection(section.key)}
+                                                        onClick={() => selectSection(section.key)}
                                                         className="rounded-md border border-gold/20 px-3 py-1.5 text-xs text-zinc-300 hover:text-gold"
                                                     >
                                                         + Add {section.label}
