@@ -34,6 +34,25 @@ type Match = {
     updatedAt: string;
 };
 
+type BoardZone = "hand" | "battlefield";
+
+type MatchBoardCard = {
+    id: string;
+    ownerId: string;
+    ownerSeat: number;
+    ownerName: string;
+    name: string;
+    zone: BoardZone;
+    zoneOwnerId: string;
+    faceDown: boolean;
+};
+
+type MatchBoardState = {
+    cards: MatchBoardCard[];
+};
+
+const PLAYER_COLORS = ["#f59e0b", "#22d3ee", "#a78bfa", "#4ade80"];
+
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
     const response = await fetch(url, { credentials: "include", ...init });
     if (response.status === 401) {
@@ -44,6 +63,23 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
         throw new Error((data as { message?: string }).message || "Request failed");
     }
     return data as T;
+}
+
+function initializeBoardState(match: Match): MatchBoardState {
+    const cards = match.players.flatMap((player) =>
+        Array.from({ length: 5 }, (_, index) => ({
+            id: `${match.id}-${player.userId}-card-${index + 1}`,
+            ownerId: player.userId,
+            ownerSeat: player.seat,
+            ownerName: player.user.username || player.user.email,
+            name: `Seat ${player.seat} Card ${index + 1}`,
+            zone: "hand" as BoardZone,
+            zoneOwnerId: player.userId,
+            faceDown: false,
+        }))
+    );
+
+    return { cards };
 }
 
 export default function MatchesPage() {
@@ -57,6 +93,9 @@ export default function MatchesPage() {
     const [loading, setLoading] = useState(true);
     const [working, setWorking] = useState(false);
     const [error, setError] = useState("");
+    const [boardStates, setBoardStates] = useState<Record<string, MatchBoardState>>({});
+    const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+    const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
     const canStartSelectedMatch = useMemo(() => {
         if (!selectedMatch || !currentUser) return false;
@@ -73,6 +112,21 @@ export default function MatchesPage() {
         () => selectedMatch?.players.find((player) => player.userId === currentUser?.id),
         [selectedMatch, currentUser]
     );
+
+    const playerColors = useMemo(() => {
+        const colors: Record<string, string> = {};
+        if (!selectedMatch) return colors;
+        const sortedPlayers = [...selectedMatch.players].sort((left, right) => left.seat - right.seat);
+        sortedPlayers.forEach((player, index) => {
+            colors[player.userId] = PLAYER_COLORS[index % PLAYER_COLORS.length];
+        });
+        return colors;
+    }, [selectedMatch]);
+
+    const selectedBoard = useMemo(() => {
+        if (!selectedMatch || selectedMatch.status !== "IN_PROGRESS") return null;
+        return boardStates[selectedMatch.id] || initializeBoardState(selectedMatch);
+    }, [boardStates, selectedMatch]);
 
     const loadData = async (preserveMatchId?: string | null) => {
         const [me, lobbyMatches, startedMatches] = await Promise.all([
@@ -175,6 +229,66 @@ export default function MatchesPage() {
 
     const handleStart = async (matchId: string) => {
         await withRefresh(() => fetchJson<Match>(`${API_URL}/matches/${matchId}/start`, { method: "POST" }));
+    };
+
+    const handleCardDrop = (targetPlayerId: string, targetZone: BoardZone) => {
+        if (!selectedMatch || !currentUser || !draggedCardId) return;
+        setError("");
+
+        setBoardStates((previous) => {
+            const currentBoard = previous[selectedMatch.id] || initializeBoardState(selectedMatch);
+
+            const card = currentBoard.cards.find((candidate) => candidate.id === draggedCardId);
+            if (!card || card.ownerId !== currentUser.id) return previous;
+
+            const droppingInOwnSection = targetPlayerId === currentUser.id;
+            const droppingInOpponentBattlefield = targetZone === "battlefield" && targetPlayerId !== currentUser.id;
+            const canDrop =
+                (droppingInOwnSection && (targetZone === "hand" || targetZone === "battlefield")) ||
+                droppingInOpponentBattlefield;
+
+            if (!canDrop) {
+                setError("You can only move your cards in your section or another player's battlefield.");
+                return previous;
+            }
+
+            return {
+                ...previous,
+                [selectedMatch.id]: {
+                    ...currentBoard,
+                    cards: currentBoard.cards.map((candidate) =>
+                        candidate.id === draggedCardId
+                            ? {
+                                  ...candidate,
+                                  zone: targetZone,
+                                  zoneOwnerId: targetPlayerId,
+                              }
+                            : candidate
+                    ),
+                },
+            };
+        });
+
+        setDraggedCardId(null);
+    };
+
+    const handleFaceDownToggle = (cardId: string) => {
+        if (!selectedMatch || !currentUser) return;
+        setBoardStates((previous) => {
+            const currentBoard = previous[selectedMatch.id] || initializeBoardState(selectedMatch);
+
+            return {
+                ...previous,
+                [selectedMatch.id]: {
+                    ...currentBoard,
+                    cards: currentBoard.cards.map((card) =>
+                        card.id === cardId && card.ownerId === currentUser.id
+                            ? { ...card, faceDown: !card.faceDown }
+                            : card
+                    ),
+                },
+            };
+        });
     };
 
     if (loading) {
@@ -343,6 +457,153 @@ export default function MatchesPage() {
                                         </div>
                                     ))}
                                 </div>
+
+                                {selectedMatch.status === "IN_PROGRESS" && selectedBoard && (
+                                    <div className="space-y-4 rounded-md border border-zinc-700 bg-zinc-950/60 p-4">
+                                        <h3 className="text-lg font-medium">Match Board</h3>
+                                        <p className="text-xs text-zinc-400">
+                                            Drag your cards to your hand/battlefield or another player&apos;s battlefield.
+                                        </p>
+                                        <div className="grid gap-4">
+                                            {[...selectedMatch.players]
+                                                .sort((left, right) => left.seat - right.seat)
+                                                .map((player) => {
+                                                    const color = playerColors[player.userId] || "#f59e0b";
+                                                    const handCards = selectedBoard.cards.filter(
+                                                        (card) => card.zone === "hand" && card.zoneOwnerId === player.userId
+                                                    );
+                                                    const battlefieldCards = selectedBoard.cards.filter(
+                                                        (card) =>
+                                                            card.zone === "battlefield" && card.zoneOwnerId === player.userId
+                                                    );
+                                                    const isCurrentPlayer = player.userId === currentUser?.id;
+
+                                                    return (
+                                                        <div
+                                                            key={player.userId}
+                                                            className="rounded-lg border p-3"
+                                                            style={{
+                                                                borderColor: `${color}80`,
+                                                                backgroundColor: `${color}14`,
+                                                            }}
+                                                        >
+                                                            <div className="mb-2 flex items-center justify-between text-sm">
+                                                                <span className="font-semibold" style={{ color }}>
+                                                                    Seat {player.seat}: {player.user.username || player.user.email}
+                                                                </span>
+                                                                <span className="text-zinc-400">Owner color</span>
+                                                            </div>
+
+                                                            <div className="grid gap-3 md:grid-cols-2">
+                                                                <div
+                                                                    className="rounded-md border border-zinc-700 bg-black/50 p-3"
+                                                                    onDragOver={(event) => event.preventDefault()}
+                                                                    onDrop={(event) => {
+                                                                        event.preventDefault();
+                                                                        handleCardDrop(player.userId, "hand");
+                                                                    }}
+                                                                >
+                                                                    <p className="mb-2 text-xs uppercase text-zinc-400">Hand</p>
+                                                                    {!isCurrentPlayer && (
+                                                                        <p className="text-sm text-zinc-500">
+                                                                            Hidden hand ({handCards.length} cards)
+                                                                        </p>
+                                                                    )}
+                                                                    {isCurrentPlayer && (
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {handCards.map((card) => {
+                                                                                const showFace =
+                                                                                    !card.faceDown || hoveredCardId === card.id;
+                                                                                return (
+                                                                                    <div
+                                                                                        key={card.id}
+                                                                                        draggable
+                                                                                        onDragStart={() => setDraggedCardId(card.id)}
+                                                                                        onDragEnd={() => setDraggedCardId(null)}
+                                                                                        onMouseEnter={() => setHoveredCardId(card.id)}
+                                                                                        onMouseLeave={() => setHoveredCardId(null)}
+                                                                                        className="w-28 cursor-grab rounded-md border border-zinc-600 bg-zinc-900 p-2 text-xs active:cursor-grabbing"
+                                                                                    >
+                                                                                        <p className="font-medium text-white">
+                                                                                            {showFace ? card.name : "Face-down card"}
+                                                                                        </p>
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            className="mt-2 text-[10px] text-gold hover:underline"
+                                                                                            onClick={() => handleFaceDownToggle(card.id)}
+                                                                                        >
+                                                                                            {card.faceDown ? "Set face up" : "Set face down"}
+                                                                                        </button>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div
+                                                                    className="rounded-md border border-zinc-700 bg-black/50 p-3"
+                                                                    onDragOver={(event) => event.preventDefault()}
+                                                                    onDrop={(event) => {
+                                                                        event.preventDefault();
+                                                                        handleCardDrop(player.userId, "battlefield");
+                                                                    }}
+                                                                >
+                                                                    <p className="mb-2 text-xs uppercase text-zinc-400">Battlefield</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {battlefieldCards.map((card) => {
+                                                                            const isOwner = card.ownerId === currentUser?.id;
+                                                                            const showFace =
+                                                                                !card.faceDown ||
+                                                                                (isOwner && hoveredCardId === card.id);
+                                                                            return (
+                                                                                <div
+                                                                                    key={card.id}
+                                                                                    draggable={isOwner}
+                                                                                    onDragStart={() => {
+                                                                                        if (!isOwner) return;
+                                                                                        setDraggedCardId(card.id);
+                                                                                    }}
+                                                                                    onDragEnd={() => setDraggedCardId(null)}
+                                                                                    onMouseEnter={() => {
+                                                                                        if (!isOwner) return;
+                                                                                        setHoveredCardId(card.id);
+                                                                                    }}
+                                                                                    onMouseLeave={() => setHoveredCardId(null)}
+                                                                                    className={`w-32 rounded-md border border-zinc-600 p-2 text-xs ${
+                                                                                        isOwner ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+                                                                                    } bg-zinc-900`}
+                                                                                >
+                                                                                    <p className="font-medium text-white">
+                                                                                        {showFace ? card.name : "Face-down card"}
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-[10px] text-zinc-400">
+                                                                                        Owner: {card.ownerName}
+                                                                                    </p>
+                                                                                    {isOwner && (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            className="mt-2 text-[10px] text-gold hover:underline"
+                                                                                            onClick={() => handleFaceDownToggle(card.id)}
+                                                                                        >
+                                                                                            {card.faceDown ? "Set face up" : "Set face down"}
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                        {!battlefieldCards.length && (
+                                                                            <p className="text-sm text-zinc-500">No cards in battlefield.</p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
