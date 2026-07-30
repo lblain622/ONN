@@ -128,6 +128,7 @@ export default function DecksPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState<SortOption>("newest");
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [isUpdatingVisibility, setIsUpdatingVisibility] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState("");
     const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -266,6 +267,38 @@ export default function DecksPage() {
         }
     };
 
+    const handleToggleVisibility = async (deck: Deck) => {
+        const nextVisibility = !Boolean(deck.isPublic);
+        setIsUpdatingVisibility(deck.id);
+        setError("");
+
+        try {
+            const response = await fetch(`${API_URL}/decks/${deck.id}/visibility`, {
+                method: "PATCH",
+                headers: {"Content-Type": "application/json"},
+                credentials: "include",
+                body: JSON.stringify({isPublic: nextVisibility}),
+            });
+
+            if (!response.ok) {
+                throw new Error("Unable to update deck visibility right now.");
+            }
+
+            const updatedDeck = (await response.json()) as Deck;
+            setDecks((current) =>
+                current.map((existing) =>
+                    existing.id === deck.id
+                        ? {...existing, isPublic: updatedDeck.isPublic}
+                        : existing
+                )
+            );
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unable to update deck visibility right now.");
+        } finally {
+            setIsUpdatingVisibility(null);
+        }
+    };
+
     const handleLogout = async () => {
         await fetch(`${API_URL}/auth/logout`, {
             method: "POST",
@@ -306,6 +339,7 @@ export default function DecksPage() {
         const cardCount = deck._count?.cards || deck.cardCount || 0;
         const isCopyingThis = isCopying === deck.id;
         const isDeletingThis = isDeleting === deck.id;
+        const isUpdatingVisibilityThis = isUpdatingVisibility === deck.id;
 
         return (
             <Card
@@ -416,6 +450,19 @@ export default function DecksPage() {
                                         onPress={() => openDeleteModal(deck)}
                                     >
                                         <Trash2 size={16}/>
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content={deck.isPublic ? "Make private" : "Share publicly"}>
+                                    <Button
+                                        size="sm"
+                                        variant="flat"
+                                        color={deck.isPublic ? "success" : "default"}
+                                        isLoading={isUpdatingVisibilityThis}
+                                        onPress={() => handleToggleVisibility(deck)}
+                                        startcontent={!isUpdatingVisibilityThis && (deck.isPublic ? <Globe size={14}/> :
+                                            <Lock size={14}/>)}
+                                    >
+                                        {deck.isPublic ? "Public" : "Private"}
                                     </Button>
                                 </Tooltip>
                             </div>

@@ -22,6 +22,7 @@ export function useDeckBuilder(deckId: string) {
     const [loading, setLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(false);
+    const [isPublic, setIsPublic] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const loadDeck = useCallback(async () => {
@@ -49,6 +50,7 @@ export function useDeckBuilder(deckId: string) {
 
             const deckData = await response.json();
             setDeckName(deckData.name);
+            setIsPublic(Boolean(deckData.isPublic));
 
             if (currentUser && deckData.ownerId !== currentUser.id && currentUser.role !== "ADMIN") {
                 setIsReadOnly(true);
@@ -198,7 +200,7 @@ export function useDeckBuilder(deckId: string) {
                     name: deckName,
                     description,
                     cards: allCards,
-                    isPublic: false,
+                    isPublic,
                 }),
             });
 
@@ -220,7 +222,7 @@ export function useDeckBuilder(deckId: string) {
         } finally {
             setIsSaving(false);
         }
-    }, [builder, deckName, deckId, router]);
+    }, [builder, deckName, deckId, isPublic, router]);
 
     return {
         builder,
@@ -230,6 +232,8 @@ export function useDeckBuilder(deckId: string) {
         loading,
         isSaving,
         isReadOnly,
+        isPublic,
+        setIsPublic,
         error,
         handleSelect,
         handleRemove,

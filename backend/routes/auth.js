@@ -2,6 +2,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import * as authService from '../services/auth.js';
 import asyncHandler from '../middleware/asyncHandler.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-a-secure-secret';
@@ -74,6 +75,20 @@ router.post('/logout', asyncHandler(async (req, res) => {
         sameSite: 'lax',
     });
     res.status(200).json({ message: 'Logged out successfully' });
+}));
+
+router.get('/me', auth, asyncHandler(async (req, res) => {
+    const user = await authService.getUserById(req.user.userId);
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+    });
 }));
 
 export default router;
