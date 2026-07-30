@@ -63,8 +63,16 @@ function validateDeckCards(cardRows, providedCards) {
 }
 
 function parseChampionName(description) {
-    const championMatch = typeof description === 'string' ? description.match(/^Champion:\s*(.+)$/m) : null;
-    return championMatch?.[1]?.trim() || null;
+    if (typeof description !== 'string') {
+        return null;
+    }
+
+    const championLine = description
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find((line) => line.startsWith('Champion:'));
+
+    return championLine ? championLine.slice('Champion:'.length).trim() || null : null;
 }
 
 function getDeckCardCount(deckCards = []) {
