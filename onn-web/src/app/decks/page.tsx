@@ -552,6 +552,13 @@ export default function DecksPage() {
 
                     <div className="flex flex-wrap gap-3">
                         <Button
+                            variant="flat"
+                            onPress={() => router.push("/matches")}
+                            startcontent={<Users size={16}/>}
+                        >
+                            Lobbies
+                        </Button>
+                        <Button
                             color="primary"
                             onPress={() => router.push("/decks/new")}
                             startcontent={<Plus size={16}/>}

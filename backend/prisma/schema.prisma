@@ -146,6 +146,9 @@ model User {
   updatedAt     DateTime @updatedAt
 
   decks         Deck[]
+  hostedMatches Match[]       @relation("HostedMatches")
+  matchPlayers  MatchPlayer[]
+  matchEvents   MatchEvent[]
 }
 
 enum UserRole {
@@ -168,6 +171,7 @@ model Deck {
   owner        User     @relation(fields: [ownerId], references: [id])
 
   cards       DeckCard[]
+  matchPlayers MatchPlayer[]
 }
 
 model DeckCard {
@@ -183,6 +187,82 @@ model DeckCard {
   card         Card @relation(fields: [cardId], references: [id])
 
   @@id([deckId, cardId])
+}
+
+model Match {
+  id         String       @id @default(cuid())
+  hostId     String
+  status     MatchStatus  @default(LOBBY)
+  visibility MatchVisibility @default(PRIVATE)
+  format     String       @default("Standard")
+  maxPlayers Int          @default(4)
+  joinCode   String       @unique
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  host       User         @relation("HostedMatches", fields: [hostId], references: [id])
+  players    MatchPlayer[]
+  state      MatchState?
+  events     MatchEvent[]
+
+  @@index([joinCode])
+  @@index([status])
+}
+
+model MatchPlayer {
+  matchId     String
+  userId      String
+  deckId      String?
+  seat        Int
+  ready       Boolean      @default(false)
+  active      Boolean      @default(true)
+  eliminated  Boolean      @default(false)
+  joinedAt    DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  match       Match        @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id])
+  deck        Deck?        @relation(fields: [deckId], references: [id], onDelete: SetNull)
+
+  @@id([matchId, userId])
+  @@unique([matchId, seat])
+  @@index([userId])
+}
+
+model MatchState {
+  matchId         String   @id
+  currentTurn     Int      @default(1)
+  currentPhase    String   @default("setup")
+  activePlayer    String?
+  serializedState String   @default("{}") @db.Text
+  updatedAt       DateTime @updatedAt
+
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model MatchEvent {
+  id        String   @id @default(cuid())
+  matchId   String
+  playerId  String?
+  action    String
+  payload   String   @default("{}") @db.Text
+  timestamp DateTime @default(now())
+
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    User?    @relation(fields: [playerId], references: [id])
+
+  @@index([matchId, timestamp])
+}
+
+enum MatchStatus {
+  LOBBY
+  IN_PROGRESS
+  FINISHED
+}
+
+enum MatchVisibility {
+  PUBLIC
+  PRIVATE
 }
 
 enum CardType {
@@ -208,4 +288,3 @@ enum Orientation {
   PORTRAIT
   LANDSCAPE
 }
-
